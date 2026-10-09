@@ -43,7 +43,9 @@ with sync_playwright() as p:
 
     # --- theme registry & assets
     themes = page.evaluate("Array.from(document.querySelectorAll('.world-card')).map(c => c.dataset.id)")
-    check("13 world cards rendered", len(themes) == 13, themes)
+    check("14 world cards rendered", len(themes) == 14, themes)
+    pool_sizes = page.evaluate("(async () => (await import('./js/theme-registry.js')).THEMES.map(t => t.hologram.forms.length))()")
+    check("every world has 8+ holograms (6–7 originals + 2 new)", all(n >= 8 for n in pool_sizes), pool_sizes)
     local_fail = [u for u in failed if not any(d in u for d in EXTERNAL)]
     check("no missing local assets (subpath-safe paths)", not local_fail, local_fail)
 
@@ -80,6 +82,20 @@ with sync_playwright() as p:
         seq.append(page.evaluate("window.__reverb.engine.toForm.id"))
     repeats = [seq[k] for k in range(1, len(seq)) if seq[k] == seq[k-1]]
     check("manual Morph changes form without immediate repeats", not repeats and len(set(seq)) >= 4, seq)
+
+    # --- grab & rotate
+    page.evaluate("scrollTo(0,0)"); time.sleep(0.2)
+    box = page.locator("#hologram").bounding_box()
+    cx, cy = box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
+    page.mouse.move(cx, cy); page.mouse.down(); page.mouse.move(cx + 160, cy + 60, steps=8); page.mouse.up()
+    u = page.evaluate("({ry: window.__reverb.engine.user.ry, rx: window.__reverb.engine.user.rx})")
+    check("drag rotates the hologram", u["ry"] > 0.4 and u["rx"] > 0.1, u)
+    page.focus("#hologram"); pos0 = page.evaluate("window.__reverb.player.state.position")
+    page.keyboard.press("ArrowLeft"); time.sleep(0.1)
+    u2 = page.evaluate("window.__reverb.engine.user.ry")
+    check("arrow keys rotate when hologram focused (not seek)", u2 < page.evaluate("window.__reverb.engine.user.ry") + 0.2 and abs(page.evaluate("window.__reverb.player.state.position") - pos0) < 3)
+    page.dblclick("#hologram"); time.sleep(0.1)
+    check("double-click resets the view", page.evaluate("window.__reverb.engine.user.ry === 0 && window.__reverb.engine.user.rx === 0"))
 
     # --- player controls
     page.click("#pl-next"); page.wait_for_function("window.__reverb.player.state.playing && window.__reverb.player.state.track.title !== %s" % json.dumps(track_title), timeout=30000)
@@ -139,7 +155,7 @@ with sync_playwright() as p:
     # --- search
     page.fill("#search", "glass"); time.sleep(0.2)
     vis = page.evaluate("Array.from(document.querySelectorAll('.world-card')).filter(c=>!c.parentElement.hidden).map(c=>c.dataset.id)")
-    check("search filters worlds", vis == ["mosaic", "stained"] or set(vis) == {"mosaic", "stained"}, vis)
+    check("search filters worlds", set(vis) == {"mosaic", "stained", "aero"}, vis)
     page.fill("#search", "baroque"); page.press("#search", "Enter"); time.sleep(0.3)
     check("search Enter applies single matching world", page.evaluate("document.documentElement.dataset.theme") == "baroque")
     page.fill("#search", "")

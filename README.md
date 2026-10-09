@@ -1,6 +1,6 @@
 # REVERB // WORLDS
 
-A static, GitHub Pages–ready music player with **13 selectable visual worlds** and a signature **music-reactive hologram**. Every world shares one player and one hologram engine. Each world brings its own art direction, materials, form pool, transition and reactions.
+A static, GitHub Pages–ready music player with **14 selectable visual worlds** and a signature **music-reactive hologram**. Every world shares one player and one hologram engine. Each world brings its own art direction, materials, form pool, transition and reactions.
 
 There are no build step, frameworks or image assets. Everything is plain HTML/CSS and ES modules, and every visual is procedural (Canvas 2D).
 
@@ -10,10 +10,11 @@ There are no build step, frameworks or image assets. Everything is plain HTML/CS
 
 | Feature | Status |
 |---|---|
-| 13 worlds (Cyberpunk → Glitch Art), data-driven in `js/theme-registry.js` | ✅ |
-| World switching that never interrupts playback, seek position or queue | ✅ (tested on all 13) |
-| Hologram engine: 79 procedural forms, ~6 per world; random selection without immediate repeats; manual **Morph**; **Auto-morph** (timer, or every 16 detected onsets); **Auto-world** | ✅ |
-| 13 transition styles (scan-wipe, iris, stroke-redraw, tile-reassemble, brush-reveal, emerge, spray, low-poly scan, slab, lead-assemble, crossfade, focus-pull, pixel-sort) | ✅ |
+| 14 worlds (Cyberpunk → Glitch Art, plus Frutiger Aero), data-driven in `js/theme-registry.js` | ✅ |
+| World switching that never interrupts playback, seek position or queue | ✅ (tested on all 14) |
+| **Grab & rotate** the hologram: drag with mouse or touch (with momentum), arrow keys when focused, double-click or Home to reset | ✅ |
+| Hologram engine: 113 procedural forms, 8 per world (9 for Japanese Scroll); random selection without immediate repeats; manual **Morph**; **Auto-morph** (timer, or every 16 detected onsets); **Auto-world** | ✅ |
+| 14 transition styles (scan-wipe, iris, stroke-redraw, tile-reassemble, brush-reveal, emerge, spray, low-poly scan, slab, lead-assemble, crossfade, focus-pull, pixel-sort, bubble-float) | ✅ |
 | Per-world kick / snare / high-frequency reactions and ambient particles | ✅ |
 | Animated procedural backdrop per world, plus procedural world-card thumbnails | ✅ |
 | **REVERB Originals**: 5 original tracks synthesised in your browser. They are genuinely analysable, so the hologram is truly audio-reactive | ✅ |
@@ -21,7 +22,7 @@ There are no build step, frameworks or image assets. Everything is plain HTML/CS
 | **Microphone** visualizer input (e.g. while Spotify plays on speakers) | ✅ |
 | Full player: play/pause, prev/next, seek, elapsed/total, volume, mute, shuffle, repeat (off/all/one), interactive queue, Media Session (lock-screen keys) | ✅ |
 | Settings: Motion (full / reduced / static), intensity, glitch intensity, reduce flashing, quality (auto/high/low), backdrop on/off, auto-morph trigger and intervals, visualizer input | ✅ |
-| Accessibility: keyboard shortcuts, visible focus, labelled icon buttons, `aria-pressed` toggles with text (not colour-only), `prefers-reduced-motion` default, WCAG AA+ palette contrast (checked in tests) | ✅ |
+| Accessibility: keyboard shortcuts, visible focus, labelled icon buttons, `aria-pressed` toggles with text (not colour-only), `prefers-reduced-motion` default, WCAG AA+ palette contrast for all 14 worlds (checked in tests) | ✅ |
 | Responsive: desktop 3-column, tablet with library sheet, mobile one-column with world carousel, compact player and expanded-player sheet | ✅ |
 | Deep links: `…/#world=baroque` | ✅ |
 | **Spotify Embed** (official iFrame API) | ✅ code complete, but **not verified live** (see below) |
@@ -113,8 +114,9 @@ Spotify integrations against **mocked** Spotify endpoints (30 checks: playlist l
 python3 reverb-worlds/tests/spotify_mock_test.py http://127.0.0.1:8765/reverb-worlds/
 ```
 
-The smoke test covers 89 checks:
-- All 13 worlds apply, with playback continuing across every switch.
+The smoke test covers 96 checks:
+- All 14 worlds apply, with playback continuing across every switch, and each has 8+ holograms.
+- Drag, arrow-key and double-click hologram rotation.
 - Each world's form comes from its own pool.
 - Morphs never repeat back-to-back.
 - Every player control works, and the queue is clickable.
@@ -124,7 +126,7 @@ The smoke test covers 89 checks:
 - Local audio files (generated WAV upload) driving audio-reactive mode.
 - The Spotify embed fails gracefully with no fake controls.
 - No secrets ship, no local assets are missing, and there are no JS errors.
-- Palette contrast for all 13 worlds.
+- Palette contrast for all 14 worlds.
 - Mobile and tablet layouts have no horizontal scroll.
 
 ## Keyboard
@@ -137,14 +139,14 @@ css/  reset · tokens · layout · components · themes (per-world ornament)
 js/
   app.js                    wiring: settings ↔ worlds ↔ hologram ↔ player
   settings.js               harmless prefs in localStorage (fails gracefully)
-  theme-registry.js         the 13 worlds as data
+  theme-registry.js         the 14 worlds as data
   theme-manager.js          applies CSS tokens + data-theme (presentation only)
   audio-analyser.js         Web Audio analysis + honest ambient source
   config.js                 optional public Spotify Client ID
   hologram/
-    forms.js                79 procedural forms, resampled for point-to-point morphs
+    forms.js                113 procedural forms, resampled for point-to-point morphs
     hologram-engine.js      the reusable visualizer (materials, transitions, reactions, particles, quality scaling)
-    backdrops.js            13 procedural animated backdrops + thumbnails
+    backdrops.js            14 procedural animated backdrops + thumbnails
   player/
     player-adapter.js       capability-driven controller (UI hides unsupported controls)
     media-provider.js       REVERB player (demo synth + local files)

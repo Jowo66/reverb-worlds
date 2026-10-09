@@ -96,7 +96,7 @@ const engine = new HologramEngine($('#hologram'), {
   getFeatures,
   onForm: ({ label }) => {
     $('#form-name').textContent = label;
-    $('#hologram').setAttribute('aria-label', `Hologram showing: ${label}`);
+    $('#hologram').setAttribute('aria-label', `Hologram showing: ${label}. Drag, or use the arrow keys, to rotate. Double-click or press Home to reset.`);
     lastMorph = performance.now();
   },
   onQualityChange: tier => { root.dataset.quality = tier === 'low' ? 'low' : 'normal'; },
@@ -137,6 +137,7 @@ themeManager.addEventListener('change', e => {
   $('#world-name').textContent = theme.name;
   $('#world-tagline').textContent = theme.tagline;
   $('#world-mood').textContent = theme.mood;
+  $('#world-total').textContent = String(THEMES.length);
   engine.setTheme(theme);
   backdrop.setTheme(theme);
   document.querySelectorAll('.world-card').forEach(c => c.setAttribute('aria-pressed', String(c.dataset.id === theme.id)));
@@ -515,7 +516,7 @@ function applySearch() {
     const hit = !q || `${t.name} ${t.tagline} ${t.mood} ${t.num}`.toLowerCase().includes(q);
     card.parentElement.hidden = !hit; if (hit) shown++;
   });
-  $('#worlds-count').textContent = q ? `${shown} of 13 worlds match “${$('#search').value.trim()}”` : '13 worlds';
+  $('#worlds-count').textContent = q ? `${shown} of ${THEMES.length} worlds match “${$('#search').value.trim()}”` : `${THEMES.length} worlds`;
   renderQueue(player.state, player.capabilities);
 }
 $('#search').addEventListener('input', applySearch);

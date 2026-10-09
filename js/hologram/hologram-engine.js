@@ -52,6 +52,7 @@ const TRANSITIONS = {
   'lead-assemble': { delay: (x, y) => (Math.atan2(y, x) + Math.PI) / TAU, spread: 0.6, ease: 'inOutCubic' },
   'crossfade': { crossfade: true, ease: 'inOutSine' },
   'focus-pull': { delay: () => 0, spread: 0, ease: 'inOutCubic', defocus: true },
+  'bubble-float': { delay: (x, y, z, i, n, r) => (1 - (y + 1) / 2) * 0.6 + r * 0.4, spread: 0.6, ease: 'inOutSine', float: 0.35 },
   'pixel-sort': { delay: (x, y, z, i, n, r) => Math.floor(clamp((x + 1) / 2, 0, 0.999) * 10) / 10 * 0.8 + r * 0.2, spread: 0.55, ease: 'inOutCubic', quantize: 0.12, sort: true },
 };
 
@@ -88,7 +89,53 @@ export class HologramEngine {
     this._resizeObs.observe(canvas);
     this.resize();
     this._loop = this._loop.bind(this);
+    // User rotation (grab & rotate). Added on top of the automatic motion.
+    this.user = { rx: 0, ry: 0, vx: 0, vy: 0, dragging: false, lastX: 0, lastY: 0, lastT: 0, id: null };
+    this._bindPointer();
   }
+
+  /* ---------------- grab & rotate ---------------- */
+  _bindPointer() {
+    const c = this.canvas, u = this.user;
+    c.addEventListener('pointerdown', e => {
+      if (e.button !== undefined && e.button !== 0) return;
+      u.dragging = true; u.id = e.pointerId; u.lastX = e.clientX; u.lastY = e.clientY; u.lastT = performance.now(); u.vx = u.vy = 0;
+      try { c.setPointerCapture(e.pointerId); } catch {}
+      c.classList.add('grabbing');
+      e.preventDefault();
+    });
+    c.addEventListener('pointermove', e => {
+      if (!u.dragging || e.pointerId !== u.id) return;
+      const now = performance.now(), dt = Math.max(1, now - u.lastT) / 1000;
+      const rect = c.getBoundingClientRect(), k = Math.PI / Math.max(200, Math.min(rect.width, rect.height) * 0.9);
+      const dRy = (e.clientX - u.lastX) * k, dRx = (e.clientY - u.lastY) * k;
+      u.ry += dRy; u.rx = clamp(u.rx + dRx, -1.35, 1.35);
+      u.vy = dRy / dt; u.vx = dRx / dt;
+      u.lastX = e.clientX; u.lastY = e.clientY; u.lastT = now;
+      if (!this.running) this.renderOnce();
+    });
+    const end = e => {
+      if (!u.dragging || (e && e.pointerId !== u.id)) return;
+      u.dragging = false; c.classList.remove('grabbing');
+      if (performance.now() - u.lastT > 80) u.vx = u.vy = 0; // released without flick
+      if (this.opts.motion !== 'full') u.vx = u.vy = 0;          // no inertia in reduced/static motion
+    };
+    c.addEventListener('pointerup', end);
+    c.addEventListener('pointercancel', end);
+    c.addEventListener('lostpointercapture', end);
+    c.addEventListener('dblclick', () => this.resetView());
+    c.addEventListener('keydown', e => {
+      const step = 0.12, map = { ArrowLeft: [0, -step], ArrowRight: [0, step], ArrowUp: [-step, 0], ArrowDown: [step, 0] };
+      if (map[e.key]) { u.rx = clamp(u.rx + map[e.key][0], -1.35, 1.35); u.ry += map[e.key][1]; u.vx = u.vy = 0; }
+      else if (e.key === 'Home' || e.key === '0') this.resetView();
+      else return;
+      e.preventDefault(); e.stopPropagation();
+      if (!this.running) this.renderOnce();
+    });
+  }
+
+  /** Return to the world's default viewing angle. */
+  resetView() { Object.assign(this.user, { rx: 0, ry: 0, vx: 0, vy: 0 }); if (!this.running) this.renderOnce(); }
 
   _initialTier() {
     const small = Math.min(window.innerWidth, window.innerHeight) < 600;
@@ -261,6 +308,7 @@ export class HologramEngine {
         if (tr.scatter) { x += (this.rand[i] - 0.5) * tr.scatter * mid; y += (this.rand2[i] - 0.5) * tr.scatter * mid * 0.4; }
         if (tr.explode) { const l = Math.hypot(x, y, z) || 1; const e = tr.explode * mid * (0.5 + this.rand[i]); x += x / l * e; y += y / l * e; z += z / l * e; }
         if (tr.quantize) { const q = tr.quantize * mid * glitchK + 0.0001; x = Math.round(x / q) * q; y = Math.round(y / q) * q; }
+        if (tr.float) { y += mid * tr.float * (0.5 + this.rand[i]); x += Math.sin(p * 6 + this.rand2[i] * 9) * 0.04 * mid; }
         if (tr.sort) { y = lerp(y, -1 + this.rand2[i] * 2, mid * 0.35 * glitchK); }
       }
       out[k] = x; out[k + 1] = y; out[k + 2] = z;
@@ -329,12 +377,19 @@ export class HologramEngine {
       if (this.hardTimer > 2.4) { this.hardTimer = 0; this.rotYTarget += Math.PI / 12; }
       this.rotY += (this.rotYTarget - this.rotY) * (1 - Math.exp(-dt * 6));
     } else {
-      this.rotY += dt * (mot.rotate + sm.mid * 0.5 * I) * motionK;
+      if (!this.user.dragging) this.rotY += dt * (mot.rotate + sm.mid * 0.5 * I) * motionK;
+    }
+    // inertia after a flick, then gentle damping
+    const u = this.user;
+    if (!u.dragging && (Math.abs(u.vx) > 0.001 || Math.abs(u.vy) > 0.001)) {
+      u.ry += u.vy * dt; u.rx = clamp(u.rx + u.vx * dt, -1.35, 1.35);
+      const damp = Math.exp(-dt * 3); u.vx *= damp; u.vy *= damp;
     }
     const sway = mot.sway ?? 0.2;
     let ry = flat ? Math.sin(this.time * 0.35) * (sway + 0.15) * motionK : this.rotY;
     let rx = flat ? Math.sin(this.time * 0.27) * sway * 0.6 * motionK : (mot.tilt || 0) + Math.sin(this.time * 0.21) * 0.08 * motionK;
     if (motion === 'static') { ry = flat ? 0 : 0.6; rx = flat ? 0 : (mot.tilt || 0.3); }
+    ry += u.ry; rx = clamp(rx + u.rx, -1.5, 1.5);
     const cY = Math.cos(ry), sY = Math.sin(ry), cX = Math.cos(rx), sX = Math.sin(rx);
 
     /* --- transform & project --- */
@@ -511,6 +566,7 @@ export class HologramEngine {
         if (mat.ink) strokeAll(lw * 1.6, baseAlpha * 0.9, () => '#1b2232');
         strokeAll(lw, baseAlpha * (mat.leaded ? 0.9 : 1), c => (mat.leaded ? lighten(mat.colors[c], 0.35) : mat.colors[c]));
         if (mat.metallic) strokeAll(lw * 0.45, baseAlpha * 0.7, () => '#fff6dc');
+        if (mat.gloss) { ctx.save(); ctx.translate(-lw * 0.6, -lw * 0.6); strokeAll(lw * 0.45, baseAlpha * 0.85, () => '#ffffff'); ctx.restore(); }
       }
 
       /* RGB channel split (Cyberpunk / Vaporwave / Glitch) */
@@ -723,6 +779,7 @@ export class HologramEngine {
       case 'pane-brighten': this.env.light = 1; add({ type: 'ring', life: 0.9, color: '#fff3c4', width: 2, from: 0.05, to: 1.0, soft: true }); break;
       case 'layer-drift': this.env.drift = 1; break;
       case 'focus-ripple': this.env.focus = 0; break;
+      case 'bubble-pop': this.env.pulse = 0.5; add({ type: 'ring', life: 0.7, color: '#7fd8ff', width: 2, from: 0.2, to: 1.1, soft: true }); this._burst('bubble', 6, 0.5); break;
       case 'band-displace': if (full) this.env.displace = 1 * g; this.env.pulse = 0.4; break;
       // ---- snare ----
       case 'rgb-scan': if (full) { this.env.rgb = 0.8 * g; add({ type: 'scan', life: 0.35, color: '#34dfff' }); } break;
@@ -737,6 +794,7 @@ export class HologramEngine {
       case 'lead-ray': this.env.ray = 0; break;
       case 'exposure-flash': this.env.edge = 1; if (flashOk()) add({ type: 'flash', life: 0.35, color: '#fff8e6', alpha: 0.2 * I }); break;
       case 'camera-flash': if (flashOk()) add({ type: 'flash', life: 0.18, color: '#ffffff', alpha: 0.28 * I, r: 0.5 }); break;
+      case 'gloss-sheen': add({ type: 'sheen', life: 0.6 }); break;
       case 'channel-split': if (full) this.env.rgb = 1.4 * g; this._burst('pixel', 10, 0.8); break;
       default: break;
     }
@@ -807,6 +865,14 @@ export class HologramEngine {
           const s = 16 * dpr; ctx.fillRect(W * 0.82, H * 0.14, s, s); // seal
           break;
         }
+        case 'sheen': {
+          // Frutiger Aero: a diagonal glossy highlight sweeping across the stage
+          const x = lerp(-0.3, 1.3, EASE.inOutSine(p)) * W;
+          const g = ctx.createLinearGradient(x - W * 0.12, 0, x + W * 0.12, H);
+          g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(0.5, `rgba(255,255,255,${0.45 * fk * Math.sin(p * Math.PI)})`); g.addColorStop(1, 'rgba(255,255,255,0)');
+          ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 1; ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+          break;
+        }
         default: break;
       }
     }
@@ -851,7 +917,7 @@ export class HologramEngine {
       P.x[i] = this.W / 2 + Math.cos(a) * 20 * this.dpr; P.y[i] = this.H / 2 + Math.sin(a) * 20 * this.dpr;
       P.vx[i] = Math.cos(a) * v; P.vy[i] = Math.sin(a) * v;
       P.max[i] = P.life[i] = 0.5 + Math.random() * 0.7;
-      P.size[i] = (kind === 'splat' ? 4 + Math.random() * 6 : 1 + Math.random() * 2) * this.dpr;
+      P.size[i] = (kind === 'splat' ? 4 + Math.random() * 6 : kind === 'bubble' ? 5 + Math.random() * 9 : 1 + Math.random() * 2) * this.dpr;
       P.col[i] = Math.floor(Math.random() * 3); P.kind[i] = K;
     }
   }
@@ -877,9 +943,10 @@ export class HologramEngine {
       if (cfg.kind === 'dust' || cfg.kind === 'speck' || cfg.kind === 'pollen') { x = Math.random() * W; y = Math.random() * H; vx = (Math.random() - 0.3) * 12; vy = -6 - Math.random() * 10; life = 2 + Math.random() * 2; }
       if (cfg.kind === 'mote') { const t = Math.random(); x = W * (0.1 + t * 0.6) + (Math.random() - 0.5) * W * 0.15; y = H * (t * 0.9); vx = 4; vy = 8; life = 3 + Math.random() * 2; }
       if (cfg.kind === 'mist') { vx = (Math.random() - 0.5) * 50; vy = (Math.random() - 0.5) * 50; life = 1.2 + Math.random(); }
+      if (cfg.kind === 'bubble') { x = Math.random() * W; y = H + 10; vx = (Math.random() - 0.5) * 10; vy = -(20 + Math.random() * 40); life = 3 + Math.random() * 3; }
       if (cfg.kind === 'spark') { const a = Math.random() * TAU; vx = Math.cos(a) * 90; vy = Math.sin(a) * 90; life = 0.35 + Math.random() * 0.4; }
       P.x[i] = x; P.y[i] = y; P.vx[i] = vx * dpr; P.vy[i] = vy * dpr; P.max[i] = P.life[i] = life;
-      P.size[i] = (cfg.kind === 'mist' ? 10 + Math.random() * 16 : 0.8 + Math.random() * 1.8) * dpr;
+      P.size[i] = (cfg.kind === 'mist' ? 10 + Math.random() * 16 : cfg.kind === 'bubble' ? 4 + Math.random() * 10 : 0.8 + Math.random() * 1.8) * dpr;
       P.col[i] = Math.floor(Math.random() * cfg.colors.length); P.kind[i] = kind;
     }
     const comp = this.mat.composite || 'source-over';
@@ -904,6 +971,14 @@ export class HologramEngine {
         case KINDS.splat: ctx.globalAlpha = a * 0.9; ctx.beginPath(); ctx.arc(P.x[i], P.y[i], s * (0.6 + a * 0.4), 0, TAU); ctx.fill(); break;
         case KINDS.mote: ctx.globalAlpha = a * 0.6 * Math.min(1, (P.max[i] - P.life[i]) * 2); ctx.beginPath(); ctx.arc(P.x[i], P.y[i], s, 0, TAU); ctx.fill(); break;
         case KINDS.twinkle: ctx.globalAlpha = a * (0.5 + 0.5 * Math.sin(P.life[i] * 20)); ctx.fillRect(P.x[i] - s / 2, P.y[i] - s / 2, s, s); break;
+        case KINDS.bubble: {
+          // glossy bubble: rim + highlight
+          ctx.globalAlpha = a * 0.7; ctx.lineWidth = dpr; ctx.strokeStyle = '#ffffff';
+          ctx.beginPath(); ctx.arc(P.x[i] + Math.sin(P.life[i] * 3) * 3 * dpr, P.y[i], s, 0, TAU); ctx.stroke();
+          ctx.globalAlpha = a * 0.5; ctx.fillStyle = '#bfefff'; ctx.beginPath(); ctx.arc(P.x[i], P.y[i], s, 0, TAU); ctx.fill();
+          ctx.globalAlpha = a * 0.9; ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(P.x[i] - s * 0.35, P.y[i] - s * 0.35, s * 0.25, 0, TAU); ctx.fill();
+          break;
+        }
         case KINDS.pixel: { const q = 3 * dpr; ctx.globalAlpha = a; ctx.fillRect(Math.round(P.x[i] / q) * q, Math.round(P.y[i] / q) * q, q, q); break; }
         default: ctx.globalAlpha = a * 0.8; ctx.fillRect(P.x[i] - s / 2, P.y[i] - s / 2, s, s);
       }
@@ -912,7 +987,7 @@ export class HologramEngine {
   }
 }
 
-const KINDS = { spark: 1, dust: 2, speck: 2, fleck: 2, pollen: 2, glint: 3, mist: 4, splat: 5, mote: 6, twinkle: 7, pixel: 8 };
+const KINDS = { bubble: 9, spark: 1, dust: 2, speck: 2, fleck: 2, pollen: 2, glint: 3, mist: 4, splat: 5, mote: 6, twinkle: 7, pixel: 8 };
 
 function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
 

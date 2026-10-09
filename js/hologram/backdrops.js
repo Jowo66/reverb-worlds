@@ -665,6 +665,82 @@ export const BACKDROPS = {
       ctx.drawImage(S.scan, 0, 0);
     },
   },
+
+  /* ------------------------------ 14 FRUTIGER AERO -------------------- */
+  aero: {
+    init(S) {
+      const { w, h, rng } = S, L = layer(w, h), c = L.getContext('2d');
+      const sky = c.createLinearGradient(0, 0, 0, h);
+      sky.addColorStop(0, '#1f8fe8'); sky.addColorStop(0.45, '#8fd3ff'); sky.addColorStop(0.7, '#e6f7ff'); sky.addColorStop(1, '#ffffff');
+      c.fillStyle = sky; c.fillRect(0, 0, w, h);
+      // soft clouds
+      for (let i = 0; i < 9; i++) {
+        const cx = rng() * w, cy = h * (0.08 + rng() * 0.35), r = Math.min(w, h) * (0.06 + rng() * 0.08);
+        for (let k = 0; k < 5; k++) { const g = c.createRadialGradient(cx + (k - 2) * r * 0.6, cy + Math.sin(k) * r * 0.2, 0, cx + (k - 2) * r * 0.6, cy, r); g.addColorStop(0, 'rgba(255,255,255,.75)'); g.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = g; c.fillRect(cx - r * 3, cy - r * 2, r * 6, r * 4); }
+      }
+      // glossy green hills with a bright rim highlight
+      const hill = (y0, amp, ph, c1, c2) => {
+        c.beginPath(); c.moveTo(0, h);
+        for (let x = 0; x <= w; x += 8) c.lineTo(x, y0 - Math.sin(x / w * 3.2 + ph) * amp - Math.sin(x / w * 7 + ph * 2) * amp * 0.25);
+        c.lineTo(w, h); c.closePath();
+        const g = c.createLinearGradient(0, y0 - amp, 0, h); g.addColorStop(0, c1); g.addColorStop(1, c2);
+        c.fillStyle = g; c.fill();
+        c.strokeStyle = 'rgba(255,255,255,.75)'; c.lineWidth = 2; c.beginPath();
+        for (let x = 0; x <= w; x += 8) { const y = y0 - Math.sin(x / w * 3.2 + ph) * amp - Math.sin(x / w * 7 + ph * 2) * amp * 0.25 + 2; x ? c.lineTo(x, y) : c.moveTo(x, y); }
+        c.stroke();
+      };
+      hill(h * 0.78, h * 0.06, 0.5, '#8be05a', '#2f9e3c');
+      hill(h * 0.86, h * 0.05, 2.1, '#5fcf4a', '#1d7a2e');
+      // grass blades along the front hill
+      c.strokeStyle = 'rgba(220,255,200,.55)'; c.lineWidth = 1.5;
+      for (let i = 0; i < w / 6; i++) { const x = rng() * w, y = h * (0.9 + rng() * 0.1), l = 8 + rng() * 18; c.beginPath(); c.moveTo(x, y); c.quadraticCurveTo(x + 3, y - l * 0.6, x + (rng() - 0.3) * 8, y - l); c.stroke(); }
+      // water droplets on the "glass"
+      for (let i = 0; i < 14; i++) {
+        const x = rng() * w, y = rng() * h * 0.7, r = 3 + rng() * 7;
+        const g = c.createRadialGradient(x - r * 0.3, y - r * 0.3, 0, x, y, r); g.addColorStop(0, 'rgba(255,255,255,.9)'); g.addColorStop(0.4, 'rgba(200,240,255,.35)'); g.addColorStop(1, 'rgba(120,200,255,.15)');
+        c.fillStyle = g; c.beginPath(); c.arc(x, y, r, 0, TAU); c.fill();
+      }
+      S.base = L;
+      S.sun = { x: w * 0.82, y: h * 0.16 };
+      S.bubbles = Array.from({ length: Math.round(w * h / 26000) + 10 }, () => ({ x: rng() * w, y: rng() * h, r: 4 + rng() * 22, v: 10 + rng() * 30, ph: rng() * TAU }));
+    },
+    draw(ctx, S, t, dt, R) {
+      const { w, h, sun } = S;
+      ctx.drawImage(S.base, 0, 0);
+      ctx.globalCompositeOperation = 'lighter';
+      // rotating light rays from the sun
+      const rays = 14, rot = S.animate ? t * 0.04 : 0;
+      for (let i = 0; i < rays; i++) {
+        const a = rot + i / rays * TAU, a2 = a + 0.08;
+        ctx.beginPath(); ctx.moveTo(sun.x, sun.y); ctx.lineTo(sun.x + Math.cos(a) * w * 1.4, sun.y + Math.sin(a) * w * 1.4); ctx.lineTo(sun.x + Math.cos(a2) * w * 1.4, sun.y + Math.sin(a2) * w * 1.4); ctx.closePath();
+        ctx.fillStyle = `rgba(255,255,255,${0.035 + R.energy * 0.03})`; ctx.fill();
+      }
+      const g = ctx.createRadialGradient(sun.x, sun.y, 0, sun.x, sun.y, Math.min(w, h) * (0.28 + R.kick * 0.05));
+      g.addColorStop(0, 'rgba(255,255,240,.95)'); g.addColorStop(0.2, 'rgba(255,250,220,.45)'); g.addColorStop(1, 'rgba(255,250,220,0)');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+      // lens-flare dots along the sun→centre axis
+      for (const [k, r, a] of [[0.35, 18, 0.12], [0.55, 9, 0.18], [0.8, 30, 0.07], [1.1, 14, 0.12]]) {
+        const x = sun.x + (w / 2 - sun.x) * k * 2, y = sun.y + (h / 2 - sun.y) * k * 2;
+        const f = ctx.createRadialGradient(x, y, 0, x, y, r * S.dpr * 2); f.addColorStop(0, `rgba(160,230,255,${a})`); f.addColorStop(1, 'rgba(160,230,255,0)');
+        ctx.fillStyle = f; ctx.fillRect(x - r * 4, y - r * 4, r * 8, r * 8);
+      }
+      // aurora-like glossy swooshes
+      for (let k = 0; k < 3; k++) {
+        ctx.beginPath();
+        for (let x = 0; x <= w; x += 10) { const y = h * (0.55 + k * 0.06) + Math.sin(x / w * 4 + t * 0.25 + k) * h * 0.05; x ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+        ctx.strokeStyle = `rgba(255,255,255,${0.22 - k * 0.05})`; ctx.lineWidth = 18 - k * 5; ctx.stroke();
+      }
+      ctx.globalCompositeOperation = 'source-over';
+      // rising bubbles
+      for (const b of S.bubbles) {
+        if (S.animate) { b.y -= b.v * dt; b.x += Math.sin(t + b.ph) * 0.3; if (b.y < -b.r * 2) { b.y = h + b.r; b.x = Math.random() * w; } }
+        const r = b.r * (1 + R.kick * 0.08);
+        const bg = ctx.createRadialGradient(b.x - r * 0.35, b.y - r * 0.35, r * 0.05, b.x, b.y, r);
+        bg.addColorStop(0, 'rgba(255,255,255,.9)'); bg.addColorStop(0.35, 'rgba(210,245,255,.18)'); bg.addColorStop(0.9, 'rgba(120,210,255,.25)'); bg.addColorStop(1, 'rgba(255,255,255,.6)');
+        ctx.fillStyle = bg; ctx.beginPath(); ctx.arc(b.x, b.y, r, 0, TAU); ctx.fill();
+      }
+    },
+  },
 };
 
 /* ====================================================================== */

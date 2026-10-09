@@ -809,6 +809,302 @@ export const FORMS = {
       return out;
     },
   },
+
+  /* ================= Added forms (2 per world + Frutiger Aero) ================= */
+  /* ---------- Cyberpunk ---------- */
+  'neon-helix': {
+    label: 'Neon double helix', build: () => {
+      const out = [], a = [], b = [];
+      for (let i = 0; i <= 120; i++) { const t = i / 120, y = -1 + 2 * t, ang = t * 4 * TAU; a.push([Math.cos(ang) * 0.45, y, Math.sin(ang) * 0.45]); b.push([Math.cos(ang + Math.PI) * 0.45, y, Math.sin(ang + Math.PI) * 0.45]); }
+      out.push(P(a), P(b));
+      for (let i = 0; i <= 120; i += 6) out.push(P([a[i], b[i]]));
+      return out;
+    },
+  },
+  'hex-tunnel': {
+    label: 'Hex tunnel', build: () => {
+      const out = [];
+      for (let k = 0; k < 7; k++) { const z = -0.9 + k * 0.3, r = 0.35 + k * 0.08, pts = []; for (let i = 0; i < 6; i++) { const a = i / 6 * TAU + k * 0.12; pts.push([Math.cos(a) * r, Math.sin(a) * r, z]); } out.push({ pts, closed: true, nofill: true }); }
+      for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; out.push(P([[Math.cos(a) * 0.35, Math.sin(a) * 0.35, -0.9], [Math.cos(a + 0.72) * 0.83, Math.sin(a + 0.72) * 0.83, 0.9]])); }
+      return out;
+    },
+  },
+  /* ---------- Art Deco ---------- */
+  'deco-skyscraper': {
+    label: 'Deco skyscraper', flat: true, build: () => {
+      const half = [[0.42, -1], [0.42, -0.2], [0.32, -0.2], [0.32, 0.2], [0.22, 0.2], [0.22, 0.5], [0.12, 0.5], [0.12, 0.72], [0.04, 0.72], [0, 1]];
+      const pts = [...half.map(([x, y]) => [x, y, 0]), ...half.slice(0, -1).reverse().map(([x, y]) => [-x, y, 0])];
+      const out = [{ pts, closed: true }];
+      for (let i = -2; i <= 2; i++) out.push(P([[i * 0.12, -0.95, 0], [i * 0.12, -0.25, 0]], { nofill: true }));
+      for (let i = 0; i < 5; i++) { const a = Math.PI / 2 + (i - 2) * 0.35; out.push(P([[0, 0.72, 0], [Math.cos(a) * 0.35, 0.72 + Math.sin(a) * 0.35, 0]])); }
+      return out;
+    },
+  },
+  'chevron-burst': {
+    label: 'Chevron burst', flat: true, build: () => {
+      const out = [];
+      for (let k = 0; k < 6; k++) { const s = 0.2 + k * 0.15; out.push(P([[-s, -0.3 - s * 0.6, 0], [0, -0.3 + s * 0.6, 0], [s, -0.3 - s * 0.6, 0]], { nofill: true })); }
+      for (let i = 0; i < 9; i++) { const a = Math.PI * (0.15 + i * 0.0875); out.push(P([[Math.cos(a) * 0.55, 0.15 + Math.sin(a) * 0.55, 0], [Math.cos(a) * 0.95, 0.15 + Math.sin(a) * 0.95, 0]])); }
+      return out;
+    },
+  },
+  /* ---------- Cave ---------- */
+  'spear-hunter': {
+    label: 'Hunter with spear', flat: true, build: () => [
+      circle(0.1, 16, { cx: -0.1, cy: 0.62 }),
+      P([[-0.1, 0.5, 0], [-0.05, 0.05, 0], [-0.3, -0.6, 0]]), P([[-0.05, 0.05, 0], [0.18, -0.6, 0]]),
+      P([[-0.08, 0.35, 0], [0.25, 0.42, 0]]), P([[-0.08, 0.35, 0], [-0.38, 0.15, 0]]),
+      P([[-0.25, 0.25, 0], [0.85, 0.62, 0]]), P([[0.85, 0.62, 0], [0.74, 0.62, 0], [0.8, 0.53, 0], [0.85, 0.62, 0]], { nofill: true }),
+    ],
+  },
+  'dot-constellation': {
+    label: 'Pigment dots & zigzag', flat: true, build: rng => {
+      const out = [];
+      for (let r = 0; r < 3; r++) for (let i = 0; i < 7; i++) out.push(circle(0.045 + rng() * 0.015, 8, { cx: -0.6 + i * 0.2, cy: 0.45 - r * 0.22 }));
+      const z = []; for (let i = 0; i <= 12; i++) z.push([-0.8 + i * 0.133, -0.45 + (i % 2) * 0.22, 0]);
+      out.push(P(z));
+      return out;
+    },
+  },
+  /* ---------- Mosaic ---------- */
+  'tile-star': {
+    label: 'Tessellated star', build: (rng, N) => {
+      const pts = [];
+      for (let i = 0; i < N; i++) { const a = rng() * TAU, k = Math.abs(Math.cos(a * 4)), rmax = 0.45 + 0.5 * Math.pow(k, 3), r = Math.sqrt(rng()) * rmax; pts.push([Math.cos(a) * r, Math.sin(a) * r, (rng() - 0.5) * 0.12]); }
+      return [{ pts, dots: true }];
+    },
+  },
+  'tile-spiral': {
+    label: 'Tile spiral', build: (rng, N) => {
+      const pts = [];
+      for (let i = 0; i < N; i++) { const t = i / N, a = t * 9 * TAU, r = 0.1 + t * 0.85; pts.push([Math.cos(a) * r, Math.sin(a) * r, (0.5 - t) * 0.8]); }
+      return [{ pts, dots: true }];
+    },
+  },
+  /* ---------- Japanese Scroll ---------- */
+  'mount-peak': {
+    label: 'Mountain & mist', flat: true, build: () => {
+      const out = [poly2([[-1, -0.6], [-0.15, 0.7], [0.05, 0.66], [0.15, 0.72], [1, -0.6]])];
+      out.push(poly2([[-0.15, 0.7], [-0.3, 0.48], [-0.18, 0.52], [-0.08, 0.44], [0.02, 0.52], [0.1, 0.46], [0.22, 0.54], [0.15, 0.72]], { nofill: false }));
+      for (let b = 0; b < 3; b++) { const pts = []; for (let i = 0; i <= 30; i++) { const x = -1 + i / 15; pts.push([x, -0.15 - b * 0.18 + Math.sin(x * 4 + b) * 0.03, 0]); } out.push(P(pts)); }
+      return out;
+    },
+  },
+  'koi': {
+    label: 'Koi', flat: true, build: () => {
+      const body = smooth(poly2([[-0.85, 0.0], [-0.5, 0.22], [0.0, 0.3], [0.45, 0.2], [0.72, 0.05], [0.72, -0.05], [0.45, -0.2], [0.0, -0.3], [-0.5, -0.2]]), 4);
+      return [body, poly2([[-0.82, 0], [-1, 0.32], [-0.92, 0], [-1, -0.32]]), poly2([[0.05, 0.28], [-0.1, 0.55], [-0.25, 0.25]]), circle(0.035, 8, { cx: 0.55, cy: 0.05 }), circle(0.12, 16, { cx: 0.1, cy: 0.02 }), circle(0.09, 14, { cx: -0.3, cy: -0.05 })];
+    },
+  },
+  /* ---------- Baroque ---------- */
+  'cherub-wing': {
+    label: 'Feathered wing', flat: true, build: () => {
+      const out = [smooth(poly2([[-0.7, -0.1], [-0.3, 0.45], [0.2, 0.75], [0.8, 0.8], [0.5, 0.45], [0.75, 0.3], [0.4, 0.1], [0.6, -0.1], [0.2, -0.25], [0.35, -0.5], [-0.2, -0.4]]), 4)];
+      for (let i = 0; i < 6; i++) { const t = i / 5; out.push(P([[-0.55 + t * 0.2, -0.05 + t * 0.3, 0], [0.2 + t * 0.45, -0.35 + t * 1.0, 0]], { nofill: true })); }
+      return out;
+    },
+  },
+  'baroque-column': {
+    label: 'Solomonic column', build: () => {
+      const out = [];
+      for (let s = 0; s < 4; s++) { const pts = []; for (let i = 0; i <= 90; i++) { const t = i / 90, y = -0.8 + 1.6 * t, a = t * 3 * TAU + s * TAU / 4; pts.push([Math.cos(a) * 0.22, y, Math.sin(a) * 0.22]); } out.push(P(pts)); }
+      out.push(...box(0, -0.88, 0, 0.6, 0.16, 0.6), ...box(0, 0.88, 0, 0.6, 0.16, 0.6));
+      return out;
+    },
+  },
+  /* ---------- Street ---------- */
+  'spray-can': {
+    label: 'Spray can', flat: true, build: () => [
+      poly2([[-0.28, -0.9], [0.28, -0.9], [0.28, 0.45], [0.18, 0.6], [-0.18, 0.6], [-0.28, 0.45]]),
+      poly2([[-0.08, 0.6], [0.08, 0.6], [0.08, 0.75], [-0.08, 0.75]]),
+      P([[-0.28, -0.1, 0], [0.28, -0.1, 0]], { nofill: true }), P([[-0.28, 0.2, 0], [0.28, 0.2, 0]], { nofill: true }),
+      P([[0.12, 0.7, 0], [0.55, 0.85, 0]]), P([[0.12, 0.7, 0], [0.6, 0.65, 0]]), P([[0.12, 0.7, 0], [0.5, 0.48, 0]]),
+    ],
+  },
+  'crown-tag': {
+    label: 'Sticker crown', flat: true, build: () => [
+      poly2([[-0.7, -0.4], [-0.75, 0.45], [-0.38, 0.1], [0, 0.6], [0.38, 0.1], [0.75, 0.45], [0.7, -0.4]]),
+      P([[-0.7, -0.55, 0], [0.7, -0.55, 0]], { nofill: true }),
+      circle(0.06, 10, { cx: -0.75, cy: 0.55 }), circle(0.06, 10, { cx: 0, cy: 0.7 }), circle(0.06, 10, { cx: 0.75, cy: 0.55 }),
+    ],
+  },
+  /* ---------- Vaporwave ---------- */
+  'wire-dolphin': {
+    label: 'Wireframe dolphin', flat: true, build: () => [
+      smooth(poly2([[-0.95, 0.1], [-0.6, 0.35], [-0.1, 0.45], [0.15, 0.7], [0.2, 0.42], [0.55, 0.3], [0.85, 0.15], [0.98, 0.08], [0.85, 0.02], [0.55, -0.05], [0.2, -0.2], [0.0, -0.45], [-0.1, -0.15], [-0.6, -0.05], [-0.85, -0.25], [-0.8, 0.0]]), 3),
+      circle(0.025, 8, { cx: 0.62, cy: 0.17 }),
+    ],
+  },
+  'retro-terrain': {
+    label: 'Retro terrain', build: () => {
+      const out = [], n = 10, h = (x, z) => 0.35 * Math.max(0, Math.sin(x * 2.2) * Math.cos(z * 1.7)) + 0.08 * Math.sin(x * 6 + z * 4);
+      for (let i = 0; i <= n; i++) { const a = [], b = []; for (let j = 0; j <= 24; j++) { const t = -1 + j / 12, s = -1 + i * 2 / n; a.push([t, h(t, s) - 0.3, s]); b.push([s, h(s, t) - 0.3, t]); } out.push(P(a), P(b)); }
+      return out;
+    },
+  },
+  /* ---------- Brutalist ---------- */
+  'stair-block': {
+    label: 'Concrete stair', build: () => {
+      const out = [];
+      for (let i = 0; i < 5; i++) out.push(...box(-0.6 + i * 0.3, -0.8 + (i + 1) * 0.16, 0, 0.3, (i + 1) * 0.32, 0.7, { bottom: i === 0 }));
+      return out;
+    },
+  },
+  'waffle-slab': {
+    label: 'Coffered slab', build: () => {
+      const out = [P([[-0.95, 0, -0.95], [0.95, 0, -0.95], [0.95, 0, 0.95], [-0.95, 0, 0.95], [-0.95, 0, -0.95]])];
+      for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) { const x = -0.7 + i * 0.47, z = -0.7 + j * 0.47, s = 0.15; out.push(P([[x - s, -0.18, z - s], [x + s, -0.18, z - s], [x + s, -0.18, z + s], [x - s, -0.18, z + s], [x - s, -0.18, z - s]])); }
+      return out;
+    },
+  },
+  /* ---------- Stained Glass ---------- */
+  'lancet-arch': {
+    label: 'Lancet window', flat: true, build: () => {
+      const out = [], arch = [];
+      arch.push([-0.45, -0.95, 0], [-0.45, 0.25, 0]);
+      for (let i = 0; i <= 12; i++) { const a = Math.PI - i / 12 * (Math.PI / 3); arch.push([0.45 + Math.cos(a) * 0.9, 0.25 + Math.sin(a) * 0.9, 0]); }
+      for (let i = 0; i <= 12; i++) { const a = Math.PI * 2 / 3 - i / 12 * (Math.PI / 3); arch.push([-0.45 + Math.cos(a) * 0.9, 0.25 + Math.sin(a) * 0.9, 0]); }
+      arch.push([0.45, -0.95, 0]);
+      out.push({ pts: arch, closed: true, nofill: true });
+      for (let r = 0; r < 4; r++) for (let c = 0; c < 2; c++) out.push(poly2([[-0.4 + c * 0.42, -0.9 + r * 0.29], [-0.02 + c * 0.42, -0.9 + r * 0.29], [-0.02 + c * 0.42, -0.65 + r * 0.29], [-0.4 + c * 0.42, -0.65 + r * 0.29]]));
+      out.push(circle(0.2, 24, { cy: 0.55 }));
+      return out;
+    },
+  },
+  'quatrefoil': {
+    label: 'Quatrefoil', flat: true, build: () => {
+      const out = [];
+      for (let i = 0; i < 4; i++) { const a = i / 4 * TAU; out.push(circle(0.38, 32, { cx: Math.cos(a) * 0.42, cy: Math.sin(a) * 0.42 })); }
+      out.push(circle(0.22, 24), circle(0.96, 72, { nofill: true }));
+      return out;
+    },
+  },
+  /* ---------- Double Exposure ---------- */
+  'stag-antlers': {
+    label: 'Stag & antlers', flat: true, build: () => {
+      const out = [smooth(poly2([[-0.18, 0.25], [-0.25, -0.1], [-0.12, -0.6], [0, -0.75], [0.12, -0.6], [0.25, -0.1], [0.18, 0.25], [0.32, 0.32], [0.18, 0.38], [0, 0.32], [-0.18, 0.38], [-0.32, 0.32]]), 3)];
+      for (const m of [1, -1]) {
+        out.push(smooth(P([[0.12 * m, 0.36, 0], [0.3 * m, 0.6, 0], [0.45 * m, 0.85, 0], [0.7 * m, 0.95, 0]]), 3));
+        out.push(P([[0.3 * m, 0.6, 0], [0.55 * m, 0.62, 0]]), P([[0.42 * m, 0.8, 0], [0.38 * m, 1.0, 0]]), P([[0.22 * m, 0.48, 0], [0.12 * m, 0.7, 0]]));
+      }
+      return out;
+    },
+  },
+  'bird-flock': {
+    label: 'Flock of birds', flat: true, build: rng => {
+      const out = [];
+      for (let i = 0; i < 9; i++) { const x = -0.8 + rng() * 1.6, y = -0.5 + rng() * 1.1, s = 0.06 + rng() * 0.08; out.push(smooth(P([[x - s, y + s * 0.4, 0], [x - s * 0.4, y + s * 0.5, 0], [x, y, 0], [x + s * 0.4, y + s * 0.5, 0], [x + s, y + s * 0.4, 0]]), 2)); }
+      return out;
+    },
+  },
+  /* ---------- Tilt Shift ---------- */
+  'hot-air-balloon': {
+    label: 'Model hot-air balloon', build: () => {
+      const out = [];
+      for (let j = 0; j < 8; j++) { const th = j / 8 * Math.PI, pts = []; for (let k = 0; k <= 30; k++) { const t = k / 30, a = -Math.PI / 2 + t * 1.6 * Math.PI, r = 0.5 * Math.cos(Math.min(Math.PI / 2.2, Math.max(-Math.PI / 2, a * 0.5))) * (t < 0.15 ? t / 0.15 * 0.6 + 0.4 : 1); pts.push([r * Math.cos(th) * (0.2 + 0.8 * Math.sin(t * Math.PI)), 0.25 + 0.55 * Math.sin(a) * 0.9, r * Math.sin(th) * (0.2 + 0.8 * Math.sin(t * Math.PI))]); } out.push(P(pts)); }
+      out.push(...box(0, -0.75, 0, 0.2, 0.14, 0.2));
+      for (const [x, z] of [[-0.1, -0.1], [0.1, -0.1], [0.1, 0.1], [-0.1, 0.1]]) out.push(P([[x, -0.68, z], [x * 1.8, -0.25, z * 1.8]]));
+      return out;
+    },
+  },
+  'mini-lighthouse': {
+    label: 'Miniature lighthouse', build: () => {
+      const out = [];
+      for (let k = 0; k < 5; k++) { const y = -0.8 + k * 0.32, r = 0.28 - k * 0.035; out.push(circle(r, 28, { plane: 'xz', cy: y, nofill: true })); }
+      for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; out.push(P([[Math.cos(a) * 0.28, -0.8, Math.sin(a) * 0.28], [Math.cos(a) * 0.14, 0.48, Math.sin(a) * 0.14]])); }
+      out.push(...box(0, 0.6, 0, 0.26, 0.22, 0.26), P([[-0.15, 0.71, 0], [0, 0.88, 0], [0.15, 0.71, 0]]));
+      for (const m of [1, -1]) out.push(P([[0, 0.6, 0], [0.95 * m, 0.75, 0.2], [0.95 * m, 0.45, -0.2], [0, 0.6, 0]], { nofill: true }));
+      return out;
+    },
+  },
+  /* ---------- Glitch Art ---------- */
+  'error-window': {
+    label: 'Error window', flat: true, build: rng => {
+      const out = [];
+      for (let k = 0; k < 3; k++) { const dx = (k - 1) * 0.12 + (rng() - 0.5) * 0.05, dy = (1 - k) * 0.1; out.push(poly2([[-0.7 + dx, -0.45 + dy], [0.7 + dx, -0.45 + dy], [0.7 + dx, 0.45 + dy], [-0.7 + dx, 0.45 + dy]], { nofill: true }), P([[-0.7 + dx, 0.3 + dy, 0], [0.7 + dx, 0.3 + dy, 0]])); }
+      out.push(P([[0.48, 0.42, 0], [0.6, 0.33, 0]]), P([[0.6, 0.42, 0], [0.48, 0.33, 0]]), poly2([[-0.2, -0.32], [0.2, -0.32], [0.2, -0.18], [-0.2, -0.18]]));
+      out.push(P([[-0.1, 0.18, 0], [0, 0, 0], [0.1, 0.18, 0]]));
+      return out;
+    },
+  },
+  'voxel-heart': {
+    label: 'Voxel heart', build: (rng, N) => {
+      const pts = [];
+      while (pts.length < N) { const x = (rng() - 0.5) * 2.4, y = (rng() - 0.5) * 2.4; const q = Math.pow(x * x + y * y - 1, 3) - x * x * y * y * y; if (q <= 0) pts.push([Math.round(x * 8) / 8 * 0.62, Math.round(y * 8) / 8 * 0.62 + 0.05, Math.round((rng() - 0.5) * 4) / 4 * 0.3]); }
+      return [{ pts, dots: true }];
+    },
+  },
+
+  /* ---------- 14 · Frutiger Aero ---------- */
+  'aqua-bubbles': {
+    label: 'Aqua bubbles', build: rng => {
+      const out = [];
+      for (let i = 0; i < 9; i++) { const r = 0.12 + rng() * 0.22, cx = (rng() - 0.5) * 1.3, cy = (rng() - 0.5) * 1.3, cz = (rng() - 0.5) * 0.8; out.push(circle(r, 36, { cx, cy, cz }), circle(r * 0.55, 10, { cx: cx - r * 0.35, cy: cy + r * 0.4, cz, a0: Math.PI * 0.55, a1: Math.PI * 0.95, closed: false })); }
+      return out;
+    },
+  },
+  'water-droplet': {
+    label: 'Water droplet', build: () => {
+      // Teardrop of revolution: x = sin t · sin(t/2), y = cos t (tip at the top, round belly below)
+      const prof = t => [Math.sin(t) * Math.sin(t / 2) * 0.62, Math.cos(t) * 0.88 - 0.05];
+      const out = [];
+      for (let j = 0; j < 10; j++) { const th = j / 10 * Math.PI, pts = []; for (let k = 0; k <= 48; k++) { const [r, y] = prof(k / 48 * TAU); pts.push([r * Math.cos(th), y, r * Math.sin(th)]); } out.push({ pts, closed: false, nofill: true }); }
+      for (const t of [1.2, 1.8, 2.4, 2.9]) { const [r, y] = prof(t); out.push(circle(r, 40, { plane: 'xz', cy: y, nofill: true })); }
+      out.push(circle(0.14, 12, { cx: -0.2, cy: -0.2, cz: 0.35, a0: Math.PI * 0.6, a1: Math.PI * 1.15, closed: false }));
+      return out;
+    },
+  },
+  'glossy-orb': {
+    label: 'Glossy orb', build: () => {
+      const out = sphereLL(0.75, 4, 8);
+      out.push(circle(0.42, 30, { cy: 0.38, cz: 0.55, plane: 'xz', nofill: true }));
+      out.push(circle(0.98, 80, { plane: 'xz', nofill: true }));
+      return out;
+    },
+  },
+  'aero-leaf': {
+    label: 'Glossy leaf', flat: true, build: () => {
+      const outline = smooth(poly2([[0, -0.85], [0.45, -0.4], [0.55, 0.15], [0.3, 0.65], [0, 0.9], [-0.3, 0.65], [-0.55, 0.15], [-0.45, -0.4]]), 4);
+      const out = [outline, P([[0, -1, 0], [0, 0.85, 0]], { nofill: true })];
+      for (let i = 0; i < 5; i++) { const y = -0.55 + i * 0.28; out.push(P([[0, y, 0], [0.38 - i * 0.04, y + 0.22, 0]]), P([[0, y, 0], [-0.38 + i * 0.04, y + 0.22, 0]])); }
+      return out;
+    },
+  },
+  'aero-swoosh': {
+    label: 'Aero swoosh', flat: true, build: () => {
+      const out = [];
+      for (let k = 0; k < 7; k++) { const pts = []; for (let i = 0; i <= 60; i++) { const t = -1 + i / 30; pts.push([t * 0.95, Math.sin(t * 1.6 + k * 0.18) * 0.5 - (k - 3) * 0.1, Math.cos(t * 1.2 + k * 0.2) * 0.12]); } out.push(P(pts)); }
+      return out;
+    },
+  },
+  'aero-globe': {
+    label: 'Eco globe', build: () => {
+      const out = sphereLL(0.62, 3, 6);
+      out.push(...rotX([circle(0.95, 72, { plane: 'xz', nofill: true })], 0.35), ...rotZ([circle(0.82, 64, { plane: 'xz', nofill: true })], 0.9));
+      for (let i = 0; i < 3; i++) { const a = i / 3 * TAU; out.push(circle(0.05, 10, { cx: Math.cos(a) * 0.95, cy: Math.sin(a) * 0.33, cz: Math.sin(a) * 0.9 })); }
+      return out;
+    },
+  },
+  'aero-butterfly': {
+    label: 'Glass butterfly', flat: true, build: () => {
+      const out = [];
+      for (const m of [1, -1]) {
+        out.push(smooth(poly2([[0.04, 0.05], [0.35, 0.6], [0.8, 0.7], [0.75, 0.25], [0.3, 0.02]], { flipX: m < 0 }), 4));
+        out.push(smooth(poly2([[0.04, -0.02], [0.55, -0.15], [0.6, -0.55], [0.25, -0.6]], { flipX: m < 0 }), 4));
+        out.push(smooth(P([[0.02 * m, 0.25, 0], [0.12 * m, 0.55, 0], [0.22 * m, 0.7, 0]], { nofill: true }), 3));
+      }
+      out.push(poly2([[-0.04, 0.2], [0.04, 0.2], [0.03, -0.45], [-0.03, -0.45]]));
+      return out;
+    },
+  },
+  'aero-fish': {
+    label: 'Aquarium fish', flat: true, build: () => [
+      smooth(poly2([[-0.6, 0], [-0.25, 0.4], [0.3, 0.45], [0.7, 0.1], [0.7, -0.1], [0.3, -0.45], [-0.25, -0.4]]), 4),
+      poly2([[-0.58, 0], [-0.95, 0.35], [-0.85, 0], [-0.95, -0.35]]),
+      circle(0.07, 14, { cx: 0.45, cy: 0.1 }),
+      circle(0.06, 10, { cx: 0.9, cy: 0.35, nofill: true }), circle(0.04, 10, { cx: 0.98, cy: 0.58, nofill: true }), circle(0.03, 8, { cx: 0.9, cy: 0.78, nofill: true }),
+    ],
+  },
 };
 
 function fragmentCube(rng, s) {

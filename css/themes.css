@@ -145,3 +145,32 @@
 
 /* Light worlds: tone down the generic dark scrim, keep panels opaque for contrast. */
 [data-theme="ukiyo"] .panel, [data-theme="double"] .panel, [data-theme="tiltshift"] .panel, [data-theme="brutalist"] .panel { -webkit-backdrop-filter: none; backdrop-filter: none; }
+
+/* ============ 14 FRUTIGER AERO ============ */
+[data-theme="aero"] { color-scheme: light; --focus: 3px solid #0a6fc2; }
+[data-theme="aero"] .backdrop-scrim { background: none; }
+[data-theme="aero"] .panel {
+  background: linear-gradient(180deg, rgba(255,255,255,.92) 0%, rgba(240,250,255,.82) 48%, rgba(222,243,255,.8) 52%, rgba(240,250,255,.86) 100%);
+  border-color: rgba(255,255,255,.95);
+}
+[data-theme="aero"] .world-name { font-weight: 400; color: #0b4f8a; text-shadow: 0 1px 0 #fff, 0 6px 18px rgba(10,111,194,.25); }
+[data-theme="aero"] .wordmark { color: #0b4f8a; }
+[data-theme="aero"] .wordmark span { color: #2fb35a; }
+[data-theme="aero"] .btn {
+  border-radius: 999px; border-color: rgba(10,111,194,.35);
+  background: linear-gradient(180deg, #ffffff 0%, #eaf6ff 48%, #d3ecff 52%, #f2faff 100%);
+  box-shadow: inset 0 1px 0 #fff, 0 2px 6px rgba(10,80,140,.15);
+}
+[data-theme="aero"] .btn-ghost, [data-theme="aero"] .btn-flat { background: transparent; box-shadow: none; border-color: transparent; }
+[data-theme="aero"] .btn-ghost:hover, [data-theme="aero"] .btn-flat:hover { border-color: rgba(10,111,194,.35); }
+[data-theme="aero"] .btn-accent, [data-theme="aero"] .btn-play {
+  color: #fff; border-color: #075c9f;
+  background: linear-gradient(180deg, #5ec2ff 0%, #1a8ce0 48%, #0a6fc2 52%, #3aa8f0 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 3px 10px rgba(10,111,194,.35);
+}
+[data-theme="aero"] .btn-play { border-radius: 50%; }
+[data-theme="aero"] .toggle[aria-pressed="true"] .toggle-dot { background: #2fb35a; border-color: #2fb35a; }
+[data-theme="aero"] .chip { background: rgba(255,255,255,.88); }
+[data-theme="aero"] .stage { background: radial-gradient(ellipse at 50% 45%, rgba(255,255,255,.5), rgba(255,255,255,.12) 70%); }
+[data-theme="aero"] .world-card { border-radius: 14px; }
+[data-theme="aero"] .range::-webkit-slider-thumb { background: linear-gradient(180deg, #fff, #cfe9ff); }

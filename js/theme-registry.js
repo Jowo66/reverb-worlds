@@ -1,5 +1,5 @@
 /**
- * theme-registry.js — the 13 worlds, defined as data.
+ * theme-registry.js — the 14 worlds, defined as data.
  *
  * Every world shares one player and one hologram engine. A world only
  * describes presentation:
@@ -28,7 +28,7 @@ export const THEMES = [
     panel: { radius: '6px', borderWidth: '1px', shadow: '0 0 0 1px rgba(255,62,201,.15), 0 10px 40px rgba(0,0,0,.55), 0 0 24px rgba(52,223,255,.12)', alpha: 0.82 },
     background: { renderer: 'cyberpunk', fps: 30 },
     hologram: {
-      forms: ['neon-torus', 'poly-core', 'frag-cube', 'scan-ring', 'crystal-shards', 'radar-sphere'],
+      forms: ['neon-torus', 'poly-core', 'frag-cube', 'scan-ring', 'crystal-shards', 'radar-sphere', 'neon-helix', 'hex-tunnel'],
       material: { colors: ['#34dfff', '#ff3ec9', '#a77bff', '#e9f6ff'], colorMode: 'depth', composite: 'lighter', lines: true, point: 'dot', pointSize: 1.3, lineWidth: 1.15, glow: 3.2, glowAlpha: 0.16, rgb: 0.25 },
       motion: { rotate: 0.32, tilt: 0.38, morph: 1.3 },
       transition: 'scan-wipe',
@@ -46,7 +46,7 @@ export const THEMES = [
     panel: { radius: '0px', borderWidth: '1px', shadow: 'inset 0 0 0 4px rgba(5,17,14,.9), inset 0 0 0 5px rgba(217,179,108,.55), 0 18px 40px rgba(0,0,0,.5)', alpha: 0.9 },
     background: { renderer: 'artdeco', fps: 24 },
     hologram: {
-      forms: ['faceted-crystal', 'stepped-pyramid', 'sun-disc', 'concentric-fan', 'gold-polyhedron', 'radial-wire'],
+      forms: ['faceted-crystal', 'stepped-pyramid', 'sun-disc', 'concentric-fan', 'gold-polyhedron', 'radial-wire', 'deco-skyscraper', 'chevron-burst'],
       material: { colors: ['#f6dfa6', '#d9b36c', '#a8823f', '#fff4d6'], colorMode: 'depth', composite: 'source-over', lines: true, point: 'glint', pointSize: 1.1, lineWidth: 1.1, glow: 2.2, glowAlpha: 0.12, metallic: true, symmetric: true },
       motion: { rotate: 0.18, tilt: 0.22, morph: 1.8 },
       transition: 'iris',
@@ -63,7 +63,7 @@ export const THEMES = [
     panel: { radius: '18px 10px 22px 12px', borderWidth: '2px', shadow: '0 12px 30px rgba(0,0,0,.55)', alpha: 0.9 },
     background: { renderer: 'cave', fps: 20 },
     hologram: {
-      forms: ['sun-disc-rough', 'bison', 'hand-stencil', 'animal-migration', 'pigment-rings', 'charcoal-spiral'],
+      forms: ['sun-disc-rough', 'bison', 'hand-stencil', 'animal-migration', 'pigment-rings', 'charcoal-spiral', 'spear-hunter', 'dot-constellation'],
       material: { colors: ['#e0954a', '#c0533a', '#efe3c8', '#2b1d14'], colorMode: 'index', composite: 'source-over', lines: true, point: 'none', lineWidth: 2.6, rough: 1.0, flat: true, fill: 0.35, fillColors: ['#c0533a', '#e0954a'], pigmentSpray: true },
       motion: { rotate: 0, tilt: 0, sway: 0.05, morph: 2.2 },
       transition: 'stroke-redraw',
@@ -80,7 +80,7 @@ export const THEMES = [
     panel: { radius: '4px', borderWidth: '6px', shadow: '0 14px 34px rgba(0,0,0,.5)', alpha: 0.9 },
     background: { renderer: 'mosaic', fps: 20 },
     hologram: {
-      forms: ['tess-sphere', 'tile-torus', 'faceted-flower', 'kaleidoscope', 'frag-poly', 'tile-wave'],
+      forms: ['tess-sphere', 'tile-torus', 'faceted-flower', 'kaleidoscope', 'frag-poly', 'tile-wave', 'tile-star', 'tile-spiral'],
       material: { colors: ['#2a5bd7', '#d6334f', '#f2a93b', '#21a67a', '#33c9c4', '#9b5de5'], colorMode: 'random', composite: 'source-over', lines: false, point: 'tile', pointSize: 6, lineWidth: 1, grout: true },
       motion: { rotate: 0.22, tilt: 0.3, morph: 1.7 },
       transition: 'tile-reassemble',
@@ -97,7 +97,7 @@ export const THEMES = [
     panel: { radius: '2px', borderWidth: '2px', shadow: '6px 6px 0 rgba(31,58,95,.18)', alpha: 0.94 },
     background: { renderer: 'ukiyo', fps: 20 },
     hologram: {
-      forms: ['wave-crest', 'paper-fan', 'moon-disc', 'crane', 'ink-circle', 'flowing-ribbon', 'abstract-crest'],
+      forms: ['wave-crest', 'paper-fan', 'moon-disc', 'crane', 'ink-circle', 'flowing-ribbon', 'abstract-crest', 'mount-peak', 'koi'],
       material: { colors: ['#1f3a5f', '#1b2232', '#b8322a', '#4f7f6b'], colorMode: 'index', composite: 'source-over', lines: true, point: 'none', lineWidth: 2.2, flat: true, fill: 0.9, fillColors: ['#1f3a5f', '#b8322a', '#f8f1df', '#4f7f6b', '#c9a24a'], ink: true },
       motion: { rotate: 0, tilt: 0, sway: 0.03, morph: 2.0 },
       transition: 'brush-reveal',
@@ -114,7 +114,7 @@ export const THEMES = [
     panel: { radius: '3px', borderWidth: '1px', shadow: 'inset 0 0 0 1px rgba(0,0,0,.6), inset 0 0 0 3px rgba(210,162,76,.35), 0 20px 60px rgba(0,0,0,.75)', alpha: 0.92 },
     background: { renderer: 'baroque', fps: 24 },
     hologram: {
-      forms: ['bust', 'gilded-orb', 'drapery', 'medallion', 'rosette', 'carved-poly'],
+      forms: ['bust', 'gilded-orb', 'drapery', 'medallion', 'rosette', 'carved-poly', 'cherub-wing', 'baroque-column'],
       material: { colors: ['#ffe2a8', '#d2a24c', '#8a5a26', '#3a2210'], colorMode: 'light', composite: 'source-over', lines: true, point: 'dot', pointSize: 1.0, lineWidth: 1.4, glow: 2.5, glowAlpha: 0.1, spotlight: true },
       motion: { rotate: 0.12, tilt: 0.18, morph: 2.6 },
       transition: 'emerge',
@@ -131,7 +131,7 @@ export const THEMES = [
     panel: { radius: '2px', borderWidth: '3px', shadow: '6px 6px 0 #ff3b30', alpha: 0.95 },
     background: { renderer: 'street', fps: 20 },
     hologram: {
-      forms: ['spray-ring', 'stencil-bird', 'drip-mark', 'sticker-star', 'halftone-sphere', 'abstract-glyph'],
+      forms: ['spray-ring', 'stencil-bird', 'drip-mark', 'sticker-star', 'halftone-sphere', 'abstract-glyph', 'spray-can', 'crown-tag'],
       material: { colors: ['#e8ff2a', '#22d3ee', '#ff3b30', '#ffffff'], colorMode: 'index', composite: 'source-over', lines: true, point: 'halftone', pointSize: 2.6, lineWidth: 4, flat: true, fill: 0.95, fillColors: ['#111111', '#e8ff2a', '#22d3ee', '#ff3b30'], spray: true, clip: true },
       motion: { rotate: 0.05, tilt: 0, sway: 0.12, morph: 1.2 },
       transition: 'spray',
@@ -148,7 +148,7 @@ export const THEMES = [
     panel: { radius: '10px', borderWidth: '2px', shadow: '0 0 0 1px rgba(255,113,206,.35), 8px 8px 0 rgba(1,205,254,.25)', alpha: 0.84 },
     background: { renderer: 'vapor', fps: 30 },
     hologram: {
-      forms: ['chrome-torus', 'wire-pyramid', 'classic-bust', 'sunset-disc', 'palm-frond', 'marble-fragment'],
+      forms: ['chrome-torus', 'wire-pyramid', 'classic-bust', 'sunset-disc', 'palm-frond', 'marble-fragment', 'wire-dolphin', 'retro-terrain'],
       material: { colors: ['#01cdfe', '#ff71ce', '#b967ff', '#fffb96'], colorMode: 'height', composite: 'lighter', lines: true, point: 'none', lineWidth: 1.4, glow: 2.6, glowAlpha: 0.14, chrome: true, rgb: 0.15 },
       motion: { rotate: 0.25, tilt: 0.25, morph: 1.4 },
       transition: 'lowpoly-scan',
@@ -166,7 +166,7 @@ export const THEMES = [
     panel: { radius: '0px', borderWidth: '3px', shadow: '10px 10px 0 rgba(18,18,18,.85)', alpha: 0.97 },
     background: { renderer: 'brutalist', fps: 15 },
     hologram: {
-      forms: ['monolith', 'stacked-blocks', 'industrial-ring', 'beam-structure', 'brutal-arch', 'shifting-cuboid'],
+      forms: ['monolith', 'stacked-blocks', 'industrial-ring', 'beam-structure', 'brutal-arch', 'shifting-cuboid', 'stair-block', 'waffle-slab'],
       material: { colors: ['#121212', '#3a3a3a', '#6b6b6b', '#ff5a1f'], colorMode: 'depth', composite: 'source-over', lines: true, point: 'square', pointSize: 2, lineWidth: 2.4, accentEvery: 9 },
       motion: { rotate: 0.14, tilt: 0.2, morph: 1.1, hard: true },
       transition: 'slab',
@@ -183,7 +183,7 @@ export const THEMES = [
     panel: { radius: '14px', borderWidth: '5px', shadow: '0 0 0 2px #000, 0 0 30px rgba(232,176,48,.12), 0 18px 40px rgba(0,0,0,.6)', alpha: 0.9 },
     background: { renderer: 'stained', fps: 20 },
     hologram: {
-      forms: ['rose-window', 'glass-sphere', 'radial-medallion', 'jewel-polyhedron', 'glass-flower', 'geometric-halo'],
+      forms: ['rose-window', 'glass-sphere', 'radial-medallion', 'jewel-polyhedron', 'glass-flower', 'geometric-halo', 'lancet-arch', 'quatrefoil'],
       material: { colors: ['#e8b030', '#3b7be0', '#d03656', '#2fa86b', '#8e4fd6', '#2cc2c9'], colorMode: 'index', composite: 'source-over', lines: true, point: 'none', lineWidth: 1.6, leaded: true, fill: 0.55, fillColors: ['#3b7be0', '#d03656', '#e8b030', '#2fa86b', '#8e4fd6', '#2cc2c9'], flatish: true },
       motion: { rotate: 0.1, tilt: 0.12, morph: 1.9 },
       transition: 'lead-assemble',
@@ -200,7 +200,7 @@ export const THEMES = [
     panel: { radius: '20px', borderWidth: '1px', shadow: '0 20px 50px rgba(29,40,36,.18)', alpha: 0.8 },
     background: { renderer: 'double', fps: 24 },
     hologram: {
-      forms: ['human-silhouette', 'tree-ring-sphere', 'forest-profile', 'layered-moon', 'mist-ribbon', 'contour-loops'],
+      forms: ['human-silhouette', 'tree-ring-sphere', 'forest-profile', 'layered-moon', 'mist-ribbon', 'contour-loops', 'stag-antlers', 'bird-flock'],
       material: { colors: ['#2f4a3d', '#6c7f92', '#b67c42', '#8fa59a'], colorMode: 'height', composite: 'source-over', lines: true, point: 'dot', pointSize: 1.2, lineWidth: 1.6, ghost: true, alpha: 0.92 },
       motion: { rotate: 0.08, tilt: 0.1, sway: 0.08, morph: 2.4 },
       transition: 'crossfade',
@@ -217,7 +217,7 @@ export const THEMES = [
     panel: { radius: '14px', borderWidth: '1px', shadow: '0 2px 0 rgba(26,35,48,.12), 0 14px 30px rgba(26,35,48,.18)', alpha: 0.93 },
     background: { renderer: 'tiltshift', fps: 24 },
     hologram: {
-      forms: ['mini-skyline', 'ferris-wheel', 'city-block', 'arch-cube', 'train-loop', 'toy-planet'],
+      forms: ['mini-skyline', 'ferris-wheel', 'city-block', 'arch-cube', 'train-loop', 'toy-planet', 'hot-air-balloon', 'mini-lighthouse'],
       material: { colors: ['#ff6b3d', '#2b8fd0', '#ffcf33', '#2fa86b', '#1a2330'], colorMode: 'index', composite: 'source-over', lines: true, point: 'dot', pointSize: 2, lineWidth: 2.2, focusBand: true },
       motion: { rotate: 0.16, tilt: 0.5, morph: 1.6 },
       transition: 'focus-pull',
@@ -234,7 +234,7 @@ export const THEMES = [
     panel: { radius: '0px', borderWidth: '1px', shadow: '3px 0 0 rgba(255,43,214,.55), -3px 0 0 rgba(0,229,255,.55)', alpha: 0.92 },
     background: { renderer: 'glitch', fps: 24 },
     hologram: {
-      forms: ['pixel-sphere', 'broken-wire', 'rgb-torus', 'glitch-cube', 'data-ribbon', 'corrupt-wave'],
+      forms: ['pixel-sphere', 'broken-wire', 'rgb-torus', 'glitch-cube', 'data-ribbon', 'corrupt-wave', 'error-window', 'voxel-heart'],
       material: { colors: ['#00ff9c', '#ff2bd6', '#00e5ff', '#f2f2f2'], colorMode: 'depth', composite: 'lighter', lines: true, point: 'pixel', pointSize: 2.4, lineWidth: 1.1, pixel: true, rgb: 0.6 },
       motion: { rotate: 0.28, tilt: 0.3, morph: 1.2 },
       transition: 'pixel-sort',
@@ -242,6 +242,23 @@ export const THEMES = [
       particles: { kind: 'pixel', colors: ['#00ff9c', '#ff2bd6', '#00e5ff'], rate: 18 },
     },
     a11y: { glitchy: true },
+  },
+  {
+    id: 'aero', num: '14', name: 'Frutiger Aero', tagline: 'Glossy Optimism',
+    mood: 'Sky-blue glass, bubbles and fresh green — clean, bright tech.',
+    direction: 'Frutiger Aero: glossy glass and aqua surfaces, skies and clouds, bubbles and water droplets, lush green nature, lens flares and light rays, optimistic mid-2000s clean-tech aesthetic',
+    palette: { bg: '#bfe6ff', surface: '#f4fbff', primary: '#0a6fc2', primaryInk: '#075c9f', onPrimary: '#ffffff', secondary: '#2fb35a', accent: '#00a3c4', text: '#0b2a4a', muted: '#38556f', border: 'rgba(10,111,194,0.35)' },
+    fonts: { display: "'Varela Round', 'Segoe UI', 'Frutiger', 'Myriad Pro', system-ui, sans-serif", body: "'Nunito Sans', 'Segoe UI', 'Frutiger', system-ui, sans-serif", mono: "'DM Mono', ui-monospace, monospace" },
+    panel: { radius: '18px', borderWidth: '1px', shadow: 'inset 0 1px 0 rgba(255,255,255,.95), 0 10px 30px rgba(10,80,140,.22)', alpha: 0.78 },
+    background: { renderer: 'aero', fps: 30 },
+    hologram: {
+      forms: ['aqua-bubbles', 'water-droplet', 'glossy-orb', 'aero-leaf', 'aero-swoosh', 'aero-globe', 'aero-butterfly', 'aero-fish'],
+      material: { colors: ['#0a6fc2', '#00a3c4', '#2fb35a', '#7fd8ff'], colorMode: 'height', composite: 'source-over', lines: true, point: 'none', lineWidth: 2, glow: 3.2, glowAlpha: 0.18, gloss: true, fill: 0.28, fillColors: ['#7fd8ff', '#9be37a', '#bfefff'] },
+      motion: { rotate: 0.2, tilt: 0.22, sway: 0.1, morph: 1.6 },
+      transition: 'bubble-float',
+      reactions: { kick: 'bubble-pop', snare: 'gloss-sheen', high: 'bubble-sparkle' },
+      particles: { kind: 'bubble', colors: ['#ffffff', '#bfefff', '#9be37a'], rate: 10 },
+    },
   },
 ];
 

@@ -9,7 +9,7 @@
   <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amatic+SC:wght@700&family=Archivo:wght@400;600;800&family=Archivo+Black&family=Audiowide&family=Cinzel:wght@500;700&family=Cormorant+Garamond:ital,wght@0,500;0,700;1,500&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;600;700&family=EB+Garamond:wght@400;600&family=IBM+Plex+Mono:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Josefin+Sans:wght@400;600&family=Jost:wght@400;500;600&family=Major+Mono+Display&family=Nunito+Sans:wght@400;700&family=Orbitron:wght@500;700&family=Permanent+Marker&family=Playfair+Display:wght@500;700&family=Poiret+One&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&family=Shippori+Mincho:wght@500;700&family=Source+Sans+3:wght@400;600&family=Space+Grotesk:wght@400;500;700&family=VT323&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amatic+SC:wght@700&family=Varela+Round&family=Archivo:wght@400;600;800&family=Archivo+Black&family=Audiowide&family=Cinzel:wght@500;700&family=Cormorant+Garamond:ital,wght@0,500;0,700;1,500&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;600;700&family=EB+Garamond:wght@400;600&family=IBM+Plex+Mono:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Josefin+Sans:wght@400;600&family=Jost:wght@400;500;600&family=Major+Mono+Display&family=Nunito+Sans:wght@400;700&family=Orbitron:wght@500;700&family=Permanent+Marker&family=Playfair+Display:wght@500;700&family=Poiret+One&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&family=Shippori+Mincho:wght@500;700&family=Source+Sans+3:wght@400;600&family=Space+Grotesk:wght@400;500;700&family=VT323&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap">
   <link rel="stylesheet" href="css/reset.css">
   <link rel="stylesheet" href="css/tokens.css">
   <link rel="stylesheet" href="css/layout.css">
@@ -60,7 +60,7 @@
 
   <main id="main" class="main" tabindex="-1">
     <section class="world-intro panel" aria-labelledby="world-name">
-      <p class="world-num"><span id="world-num">01</span> <span class="slash" aria-hidden="true">/</span> 13</p>
+      <p class="world-num"><span id="world-num">01</span> <span class="slash" aria-hidden="true">/</span> <span id="world-total">14</span></p>
       <h1 id="world-name" class="world-name">Cyberpunk</h1>
       <p id="world-tagline" class="world-tagline">Neon / Night City</p>
       <p id="world-mood" class="world-mood"></p>
@@ -76,7 +76,8 @@
         <span class="chip" id="viz-mode" title="Visualizer input">Ambient animation</span>
         <span class="chip chip-form" id="form-name" aria-live="polite">—</span>
       </div>
-      <canvas id="hologram" class="hologram" role="img" aria-label="Music-reactive hologram"></canvas>
+      <canvas id="hologram" class="hologram" tabindex="0" role="application" aria-roledescription="rotatable hologram" aria-label="Music-reactive hologram. Drag, or use the arrow keys, to rotate. Double-click or press Home to reset." aria-describedby="rotate-hint"></canvas>
+      <p class="rotate-hint" id="rotate-hint">Drag to rotate · double-click to reset</p>
       <div class="stage-controls" role="toolbar" aria-label="Hologram controls">
         <button class="btn btn-accent" type="button" id="btn-morph"><svg class="icon"><use href="#i-morph"/></svg><span>Morph</span></button>
         <button class="btn toggle" type="button" id="btn-automorph" aria-pressed="true"><span class="toggle-dot" aria-hidden="true"></span><span>Auto-morph</span></button>
@@ -166,7 +167,7 @@
     <section class="worlds panel" id="worlds-panel" aria-labelledby="worlds-title" tabindex="-1">
       <div class="worlds-head">
         <h2 id="worlds-title" class="section-label">Worlds</h2>
-        <p class="worlds-hint" id="worlds-count">13 worlds</p>
+        <p class="worlds-hint" id="worlds-count">14 worlds</p>
       </div>
       <ul class="world-grid" id="world-grid" role="list"></ul>
     </section>
@@ -264,6 +265,7 @@
           <dt><kbd>M</kbd></dt><dd>Morph hologram</dd>
           <dt><kbd>[</kbd> <kbd>]</kbd></dt><dd>Previous / next world</dd>
           <dt><kbd>V</kbd></dt><dd>Pause / resume visuals</dd>
+          <dt>Drag / <kbd>↑↓←→</kbd></dt><dd>Rotate the hologram (arrow keys when it has focus; <kbd>Home</kbd> resets)</dd>
         </dl>
       </fieldset>
 
