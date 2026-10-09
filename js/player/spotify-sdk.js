@@ -85,11 +85,11 @@ export class SpotifySdkProvider extends EventTarget {
     player.addListener('ready', async ({ device_id }) => {
       this.deviceId = device_id;
       this.capabilities = { ...FULL };
-      this._set('ready', 'Connected as a Spotify Connect device. Paste a Spotify link and press “Play on Spotify”.');
+      this._set('ready', 'Connected to Spotify. Search above or pick one of your playlists to start.');
       // Make this browser the active device (does not start playback).
       await this._api('PUT', '/me/player', { device_ids: [device_id], play: false }).catch(() => {});
     });
-    player.addListener('not_ready', () => this._set('unavailable', 'Spotify device went offline.'));
+    player.addListener('not_ready', () => { this.deviceId = null; this._set('loading', 'Spotify device went offline — it will reconnect when you play something.'); });
     player.addListener('initialization_error', ({ message }) => this._set('unavailable', `This browser can’t run the Spotify SDK: ${message}`));
     player.addListener('authentication_error', ({ message }) => { logout(); this._set('auth-required', `Spotify authentication failed: ${message}`); });
     player.addListener('account_error', ({ message }) => this._set('error', `Spotify account error (Premium required, or your account isn’t on this app’s Development-Mode allow-list): ${message}`));
@@ -109,10 +109,9 @@ export class SpotifySdkProvider extends EventTarget {
   async playLink(input) {
     const ent = parseSpotify(input);
     if (!ent) return this._set('error', 'Paste a Spotify track, album, playlist, artist or show link.');
-    if (!this.deviceId) return this._set('error', 'Connect the Spotify player first.');
-    this.player.activateElement?.(); // required by some browsers (mobile/Safari) inside a user gesture
+    this.player?.activateElement?.(); // required by some browsers (mobile/Safari) inside a user gesture
     const body = ent.type === 'track' || ent.type === 'episode' ? { uris: [ent.uri] } : { context_uri: ent.uri };
-    try { await this._api('PUT', `/me/player/play?device_id=${encodeURIComponent(this.deviceId)}`, body); }
+    try { await this._play(body); }
     catch (e) { this._set('error', e.message); }
   }
 
@@ -143,19 +142,78 @@ export class SpotifySdkProvider extends EventTarget {
 
   /** Play a search result. Tracks play inside their album so next/previous keep working. */
   async playItem(item) {
-    if (!this.deviceId) return this._set('error', 'Connect the Spotify player first.');
-    this.player.activateElement?.();
+    this.player?.activateElement?.();
     const body = item.type === 'track'
       ? (item.contextUri ? { context_uri: item.contextUri, offset: { uri: item.uri } } : { uris: [item.uri] })
       : { context_uri: item.uri };
-    try { await this._api('PUT', `/me/player/play?device_id=${encodeURIComponent(this.deviceId)}`, body); }
+    try { await this._play(body); }
     catch (e) { this._set('error', e.message); throw e; }
+  }
+
+  /* ---------------- device recovery ----------------
+   * Spotify's Web API can answer 404 "device not found" right after the SDK
+   * reports ready, or after an idle tab was dropped. We then (1) wait for the
+   * device to appear in /me/player/devices and transfer playback to it, or
+   * (2) reconnect the SDK, and retry the request once. */
+  _sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  _waitReady(ms = 12000) {
+    return new Promise(resolve => {
+      const t0 = performance.now();
+      const tick = () => { if (this.deviceId) return resolve(true); if (performance.now() - t0 > ms) return resolve(false); setTimeout(tick, 200); };
+      tick();
+    });
+  }
+
+  async _reconnect() {
+    this._set('loading', 'Reconnecting the Spotify player…');
+    try { this.player?.disconnect(); } catch {}
+    this.player = null; this.deviceId = null;
+    await this.connect();
+    return this._waitReady();
+  }
+
+  async _ensureDevice() {
+    for (let attempt = 0; attempt < 4; attempt++) {
+      if (!this.deviceId) break;
+      try {
+        const res = await this._api('GET', '/me/player/devices');
+        const { devices = [] } = await res.json();
+        if (devices.some(d => d.id === this.deviceId)) {
+          await this._api('PUT', '/me/player', { device_ids: [this.deviceId], play: false }).catch(() => {});
+          await this._sleep(400);
+          return true;
+        }
+      } catch {}
+      await this._sleep(700 * (attempt + 1));
+    }
+    if (!(await this._reconnect())) return false;
+    await this._api('PUT', '/me/player', { device_ids: [this.deviceId], play: false }).catch(() => {});
+    await this._sleep(600);
+    return true;
+  }
+
+  /** PUT /me/player/play on this device, recovering from a stale/unknown device once. */
+  async _play(body) {
+    if (!this.deviceId && !(await this._reconnect())) throw new Error('The Spotify player is not connected. Check Premium, the app’s User Management allow-list, and that this browser supports DRM playback.');
+    const send = () => this._api('PUT', `/me/player/play?device_id=${encodeURIComponent(this.deviceId)}`, body);
+    try { return await send(); }
+    catch (e) {
+      if (e.status !== 404) throw e;
+      this._set('loading', 'Waking up the Spotify player…');
+      if (!(await this._ensureDevice())) throw new Error('Spotify can’t see this browser as a playback device. Reload the page and press Connect again; if it persists, open the Spotify app once on any device and retry.');
+      const res = await send();
+      this._set('buffering', ''); // the SDK's next state event replaces this
+      return res;
+    }
   }
 
   /** Add a track to the Spotify queue on this device. */
   async addToQueue(uri) {
-    if (!this.deviceId) throw new Error('Connect the Spotify player first.');
-    await this._api('POST', `/me/player/queue?uri=${encodeURIComponent(uri)}&device_id=${encodeURIComponent(this.deviceId)}`, undefined, 'add to your queue');
+    if (!this.deviceId && !(await this._reconnect())) throw new Error('Connect the Spotify player first.');
+    const send = () => this._api('POST', `/me/player/queue?uri=${encodeURIComponent(uri)}&device_id=${encodeURIComponent(this.deviceId)}`, undefined, 'add to your queue');
+    try { await send(); }
+    catch (e) { if (e.status !== 404 || !(await this._ensureDevice())) throw e; await send(); }
   }
 
   /** The signed-in user's playlists (GET /me/playlists — available to Development-Mode apps in 2026). */
@@ -185,11 +243,12 @@ export class SpotifySdkProvider extends EventTarget {
     const token = await getAccessToken(this.getClientId());
     if (!token) throw new Error('Not signed in to Spotify.');
     const res = await fetch(API + path, { method, headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
-    if (res.status === 403) throw new Error(what
+    const fail = (status, msg) => Object.assign(new Error(msg), { status });
+    if (res.status === 403) throw fail(403, what
       ? `Spotify refused to ${what} (403). Sign out and connect again to grant the new permission, and make sure your account is on the app’s User Management allow-list.`
       : 'Spotify refused the request (403). Premium is required, and Development-Mode apps only allow users on the app’s allow-list.');
-    if (res.status === 404) throw new Error('No active Spotify device (404). Reconnect the player.');
-    if (!res.ok && res.status !== 204) { let msg = `HTTP ${res.status}`; try { msg = (await res.json()).error?.message || msg; } catch {} throw new Error(`Spotify API: ${msg}`); }
+    if (res.status === 404) throw fail(404, 'Spotify can’t find this player device (404).');
+    if (!res.ok && res.status !== 204) { let msg = `HTTP ${res.status}`; try { msg = (await res.json()).error?.message || msg; } catch {} throw fail(res.status, `Spotify API: ${msg}`); }
     return res;
   }
 
@@ -198,10 +257,9 @@ export class SpotifySdkProvider extends EventTarget {
 
   /** Start something when nothing is loaded: resume the account's last context on this device. */
   async _startFromIdle() {
-    if (!this.deviceId) return this._set('error', 'Connect the Spotify player first.');
-    this.player.activateElement?.();
+    this.player?.activateElement?.();
     try {
-      await this._api('PUT', `/me/player/play?device_id=${encodeURIComponent(this.deviceId)}`);
+      await this._play();
       setTimeout(() => { if (!this.hasTrack) this._set('ready', 'Pick one of your playlists in Library › Sources to start playing.'); this.dispatchEvent(new Event('needs-selection')); }, 2500);
     } catch {
       this._set('ready', 'Pick one of your playlists in Library › Sources to start playing.');

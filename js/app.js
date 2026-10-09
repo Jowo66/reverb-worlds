@@ -453,7 +453,7 @@ async function loadPlaylists() {
 async function playPlaylist(p) {
   analyser.ensureContext();
   currentPlaylist = p.id; renderPlaylists();
-  if (sdk.deviceId) {
+  if (sdk.deviceId || sdk.player) {
     await player.use('spotify-sdk');
     await sdk.playLink(p.uri);
     if (player.state.status !== 'error') toast(`Playing “${p.name}” on Spotify.`);
@@ -536,7 +536,7 @@ function renderSpotifyResults() {
 async function playSpotifyItem(item) {
   analyser.ensureContext();
   spSearch.current = item.uri; renderSpotifyResults();
-  if (sdk.deviceId) {
+  if (sdk.deviceId || sdk.player) {
     await player.use('spotify-sdk');
     try { await sdk.playItem(item); toast(`Playing “${item.title}” on Spotify.`); } catch {}
   } else {

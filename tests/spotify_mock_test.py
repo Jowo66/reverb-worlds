@@ -61,6 +61,11 @@ with sync_playwright() as p:
         route.fulfill(status=200, content_type="application/json", body=json.dumps({"access_token": "tok-1", "refresh_token": "ref-1", "expires_in": 3600, "scope": "streaming"}))
     def api(route):
         seen["api"].append((route.request.method, route.request.url, route.request.post_data))
+        if route.request.method == "GET" and route.request.url.endswith("/me/player/devices"):
+            return route.fulfill(status=200, content_type="application/json", body=json.dumps({"devices": [{"id": "dev-123", "is_active": False, "name": "REVERB // WORLDS"}]}))
+        if route.request.method == "PUT" and "/me/player/play" in route.request.url and seen.get("fail_play_once"):
+            seen["fail_play_once"] = False
+            return route.fulfill(status=404, content_type="application/json", body=json.dumps({"error": {"status": 404, "message": "Device not found"}}))
         if route.request.method == "GET" and "/v1/search" in route.request.url:
             q = parse_qs(urlparse(route.request.url).query)
             types = q["type"][0].split(","); off = int(q.get("offset", ["0"])[0])
@@ -156,6 +161,16 @@ with sync_playwright() as p:
     wait_until(lambda: any("/me/player/play" in u and "37i9dQZF1DX4WYpdgoIcn6" in (d or "") for _, u, d in seen["api"][n0:]), page=pg)
     check("clicking a searched playlist plays it", any("/me/player/play" in u and "37i9dQZF1DX4WYpdgoIcn6" in (d or "") for _, u, d in seen["api"][n0:]))
     pg.check('input[name="sp-type"][value="all"]')
+
+    # ---- 404 'device not found' → recover (devices + transfer) and retry once
+    seen["fail_play_once"] = True; n0 = len(seen["api"])
+    pg.click("#sp-results .sp-item[data-type=album] .sp-play") if pg.locator("#sp-results .sp-item[data-type=album]").count() else pg.click("#playlist-grid .pl-card >> nth=1")
+    wait_until(lambda: sum(1 for m, u, _ in seen["api"][n0:] if m == "PUT" and "/me/player/play" in u) >= 2, timeout=12, page=pg)
+    calls = [(m, u.split("/v1")[-1]) for m, u, _ in seen["api"][n0:]]
+    plays = [c for c in calls if c[0] == "PUT" and "/me/player/play" in c[1]]
+    check("404 device-not-found recovers: checks devices, transfers, retries play", len(plays) >= 2 and ("GET", "/me/player/devices") in calls and ("PUT", "/me/player") in calls, calls)
+    pg.wait_for_timeout(300)
+    check("no 404 error left on screen after recovery", "404" not in pg.inner_text("#np-status"), pg.inner_text("#np-status"))
 
     # Play with nothing loaded on the device → resume last context instead of a raw SDK error
     pg.evaluate("window.__reverb.sdk.sdkState = null")
