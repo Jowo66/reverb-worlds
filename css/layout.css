@@ -1,0 +1,155 @@
+/* ---------------------------------------------------------------- base */
+html, body { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.45;
+  overflow-x: hidden;
+  transition: background-color var(--t-med);
+}
+
+.backdrop {
+  position: fixed; inset: 0;
+  width: 100vw; height: 100vh;
+  z-index: -2;
+  pointer-events: none;
+}
+.backdrop-scrim {
+  position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: radial-gradient(ellipse at 50% 42%, rgba(0,0,0,0) 0%, rgba(0,0,0,.18) 55%, rgba(0,0,0,.45) 100%);
+}
+
+.visually-hidden {
+  position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+.skip-link {
+  position: absolute; left: 12px; top: -60px; z-index: 100;
+  background: var(--primary); color: var(--on-primary); padding: 10px 14px; border-radius: var(--radius);
+  font-weight: 700; text-decoration: none;
+}
+.skip-link:focus { top: 12px; }
+
+:focus-visible { outline: var(--focus); outline-offset: 2px; }
+
+/* ---------------------------------------------------------------- panels */
+.panel {
+  background: rgba(var(--surface-rgb), var(--surface-alpha));
+  border: var(--panel-border-width) solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--panel-shadow);
+}
+@media (min-width: 900px) {
+  .panel { -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  html[data-quality="low"] .panel { -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+
+/* ---------------------------------------------------------------- top bar */
+.topbar {
+  position: sticky; top: 0; z-index: 20;
+  display: grid; grid-template-columns: auto minmax(160px, 420px) auto; align-items: center; justify-content: space-between;
+  gap: var(--gap);
+  margin: var(--gap) var(--gap) 0;
+  padding: 10px var(--pad);
+}
+.wordmark {
+  font-family: var(--font-display);
+  font-weight: 700; letter-spacing: .14em; font-size: clamp(15px, 1.6vw, 20px);
+  color: var(--text); text-decoration: none; white-space: nowrap;
+}
+.wordmark span { color: var(--primary-ink); }
+.topnav { display: flex; gap: 6px; }
+
+/* ---------------------------------------------------------------- main grid */
+.main {
+  max-width: 1680px; margin: 0 auto;
+  padding: var(--gap) var(--gap) calc(var(--player-h) + var(--gap) * 2);
+  display: grid; gap: var(--gap);
+  grid-template-columns: minmax(230px, .85fr) minmax(0, 2fr) minmax(280px, 1fr);
+  grid-template-areas:
+    "intro  stage library"
+    "now    stage library"
+    "worlds worlds worlds";
+  grid-template-rows: auto 1fr auto;
+}
+.main:focus { outline: none; }
+.world-intro { grid-area: intro; }
+.stage       { grid-area: stage; }
+.now-playing { grid-area: now; }
+.library     { grid-area: library; }
+.worlds      { grid-area: worlds; }
+
+.stage {
+  position: relative;
+  min-height: 420px; height: min(66vh, 680px);
+  overflow: hidden;
+  background: rgba(var(--surface-rgb), calc(var(--surface-alpha) * .28));
+}
+/* The canvas is taken out of flow so its pixel size can never feed back into layout. */
+.hologram { position: absolute; inset: 0; width: 100%; height: 100%; }
+.stage-hud { position: absolute; top: 0; left: 0; right: 0; z-index: 2; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; padding: 12px; pointer-events: none; }
+.stage-controls { position: absolute; bottom: 0; left: 0; right: 0; z-index: 2; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; padding: 12px; }
+.main > * { min-width: 0; }
+
+.library {
+  display: flex; flex-direction: column; min-height: 0;
+  height: min(66vh, 680px);
+  overflow: hidden;
+}
+
+/* ---------------------------------------------------------------- player */
+.player {
+  position: fixed; left: var(--gap); right: var(--gap); bottom: var(--gap); z-index: 30;
+  min-height: var(--player-h);
+  display: grid; grid-template-columns: minmax(180px, 1fr) minmax(280px, 2fr) minmax(160px, 1fr); align-items: center;
+  gap: var(--gap); padding: 10px var(--pad);
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
+}
+.provider-surface {
+  position: fixed; right: var(--gap); bottom: calc(var(--player-h) + var(--gap) * 2); z-index: 29;
+  width: min(420px, calc(100vw - var(--gap) * 2));
+  padding: 10px;
+}
+
+/* ---------------------------------------------------------------- tablet */
+@media (max-width: 1100px) {
+  .main {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "stage  stage"
+      "intro  now"
+      "worlds worlds";
+    grid-template-rows: auto auto auto;
+  }
+  .stage { height: min(58vh, 560px); }
+  /* Library becomes a sheet */
+  .library {
+    position: fixed; z-index: 40; right: var(--gap); top: var(--gap); bottom: calc(var(--player-h) + var(--gap) * 2);
+    width: min(440px, calc(100vw - var(--gap) * 2)); height: auto;
+    transform: translateX(calc(100% + var(--gap) * 2)); visibility: hidden;
+    transition: transform var(--t-med) ease, visibility 0s linear var(--t-med);
+  }
+  .library.open { transform: none; visibility: visible; transition: transform var(--t-med) ease; }
+  .library { background: rgba(var(--surface-rgb), .98); }
+  .backdrop-scrim { background: radial-gradient(ellipse at 50% 35%, rgba(0,0,0,0) 0%, rgba(0,0,0,.3) 100%); }
+}
+
+/* ---------------------------------------------------------------- mobile */
+@media (max-width: 700px) {
+  :root { --player-h: 68px; }
+  .topbar { grid-template-columns: minmax(0, 1fr) auto; margin: 8px 8px 0; padding: 8px 10px; }
+  .topbar .search, .topbar .search input { min-width: 0; }
+  .topbar .search { grid-column: 1 / -1; grid-row: 2; }
+  .topnav .btn span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .main {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "intro" "stage" "now" "worlds";
+    padding: 8px 8px calc(var(--player-h) + 24px);
+  }
+  .stage { height: 54vh; min-height: 320px; }
+  .library { left: 8px; right: 8px; width: auto; top: auto; bottom: calc(var(--player-h) + 16px); height: 72vh; transform: translateY(calc(100% + 120px)); }
+  .player { left: 8px; right: 8px; bottom: 8px; grid-template-columns: 1fr auto auto; padding: 8px 10px; }
+  .provider-surface { left: 8px; right: 8px; width: auto; bottom: calc(var(--player-h) + 16px); }
+}

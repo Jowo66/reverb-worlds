@@ -1,0 +1,33 @@
+/*
+ * Design tokens. Theme colours/fonts are injected by js/theme-manager.js from
+ * the data registry; these are the defaults (Cyberpunk) so the page is styled
+ * even before JavaScript runs.
+ */
+:root {
+  --bg: #070914;
+  --surface: #0c1124;
+  --surface-rgb: 12, 17, 36;
+  --surface-alpha: .82;
+  --primary: #ff3ec9;
+  --primary-ink: #ff7ad9;
+  --on-primary: #12020d;
+  --secondary: #34dfff;
+  --accent: #a77bff;
+  --text: #f4f7ff;
+  --muted: #aab5d8;
+  --border: rgba(52, 223, 255, .55);
+  --font-display: 'Orbitron', 'Arial Narrow', sans-serif;
+  --font-body: 'Rajdhani', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'Share Tech Mono', ui-monospace, monospace;
+  --radius: 6px;
+  --panel-border-width: 1px;
+  --panel-shadow: 0 10px 40px rgba(0, 0, 0, .55);
+
+  --gap: clamp(10px, 1.6vw, 18px);
+  --pad: clamp(12px, 1.8vw, 20px);
+  --player-h: 88px;
+  --focus: 3px solid var(--secondary);
+  --t-fast: 160ms;
+  --t-med: 420ms;
+  color-scheme: dark;
+}

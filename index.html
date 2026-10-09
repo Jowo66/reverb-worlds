@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en" data-theme="cyberpunk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>REVERB // WORLDS</title>
+  <meta name="description" content="A music player with thirteen visual worlds and a music-reactive hologram.">
+  <meta name="theme-color" content="#070914">
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amatic+SC:wght@700&family=Archivo:wght@400;600;800&family=Archivo+Black&family=Audiowide&family=Cinzel:wght@500;700&family=Cormorant+Garamond:ital,wght@0,500;0,700;1,500&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;600;700&family=EB+Garamond:wght@400;600&family=IBM+Plex+Mono:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Josefin+Sans:wght@400;600&family=Jost:wght@400;500;600&family=Major+Mono+Display&family=Nunito+Sans:wght@400;700&family=Orbitron:wght@500;700&family=Permanent+Marker&family=Playfair+Display:wght@500;700&family=Poiret+One&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&family=Shippori+Mincho:wght@500;700&family=Source+Sans+3:wght@400;600&family=Space+Grotesk:wght@400;500;700&family=VT323&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap">
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/themes.css">
+  <script type="module" src="js/app.js"></script>
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z" fill="currentColor"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path d="M6 4h4.5v16H6zM13.5 4H18v16h-4.5z" fill="currentColor"/></symbol>
+    <symbol id="i-next" viewBox="0 0 24 24"><path d="M5 5v14l10-7zM16.5 5H19v14h-2.5z" fill="currentColor"/></symbol>
+    <symbol id="i-prev" viewBox="0 0 24 24"><path d="M19 5v14L9 12zM5 5h2.5v14H5z" fill="currentColor"/></symbol>
+    <symbol id="i-shuffle" viewBox="0 0 24 24"><path d="M3 7h3.5c2.5 0 3.8 1.2 5.2 3.6l.6 1c1.3 2.2 2.4 3.4 4.7 3.4H20m0 0-2.5-2.5M20 15l-2.5 2.5M3 17h3.5c1.6 0 2.7-.5 3.6-1.4M14 8.4c.9-.9 1.9-1.4 3-1.4H20m0 0-2.5-2.5M20 7l-2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-repeat" viewBox="0 0 24 24"><path d="M4 11V9a3 3 0 0 1 3-3h12m0 0-3-3m3 3-3 3M20 13v2a3 3 0 0 1-3 3H5m0 0 3 3m-3-3 3-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-volume" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-mute" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="m16 9.5 5 5m0-5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-queue" viewBox="0 0 24 24"><path d="M4 6h12M4 11h12M4 16h7M16 14.5v5.5l4.5-2.75z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9M15 5v4M9 15v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-morph" viewBox="0 0 24 24"><path d="M12 3 4 7.5v9L12 21l8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+    <symbol id="i-worlds" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3.5 12h17M12 3.5c2.5 2.6 3.6 5.4 3.6 8.5S14.5 17.9 12 20.5M12 3.5C9.5 6.1 8.4 8.9 8.4 12s1.1 5.9 3.6 8.5" fill="none" stroke="currentColor" stroke-width="1.4"/></symbol>
+    <symbol id="i-library" viewBox="0 0 24 24"><path d="M5 4v16M9.5 4v16M14 4.5l4.5 15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-chevron-up" viewBox="0 0 24 24"><path d="m6 15 6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-left" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-cycle" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v4.5h-4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="3" fill="currentColor"/></symbol>
+  </svg>
+
+  <a class="skip-link" href="#main">Skip to player</a>
+
+  <canvas id="backdrop" class="backdrop" aria-hidden="true"></canvas>
+  <div class="backdrop-scrim" aria-hidden="true"></div>
+
+  <header class="topbar panel">
+    <a class="wordmark" href="./" aria-label="REVERB // WORLDS home">REVERB <span aria-hidden="true">//</span> WORLDS</a>
+    <form class="search" role="search" id="search-form">
+      <label class="visually-hidden" for="search">Search worlds and tracks</label>
+      <input id="search" type="search" placeholder="Search worlds &amp; tracks" autocomplete="off" spellcheck="false">
+    </form>
+    <nav class="topnav" aria-label="Primary">
+      <button class="btn btn-ghost" type="button" id="nav-worlds" aria-controls="worlds-panel"><svg class="icon"><use href="#i-worlds"/></svg><span>Worlds</span></button>
+      <button class="btn btn-ghost" type="button" id="nav-library" aria-controls="library-panel" aria-expanded="false"><svg class="icon"><use href="#i-library"/></svg><span>Library</span></button>
+      <button class="btn btn-ghost" type="button" id="nav-settings" aria-haspopup="dialog"><svg class="icon"><use href="#i-settings"/></svg><span>Settings</span></button>
+    </nav>
+  </header>
+
+  <main id="main" class="main" tabindex="-1">
+    <section class="world-intro panel" aria-labelledby="world-name">
+      <p class="world-num"><span id="world-num">01</span> <span class="slash" aria-hidden="true">/</span> 13</p>
+      <h1 id="world-name" class="world-name">Cyberpunk</h1>
+      <p id="world-tagline" class="world-tagline">Neon / Night City</p>
+      <p id="world-mood" class="world-mood"></p>
+      <div class="world-step">
+        <button class="btn btn-icon" type="button" id="world-prev" aria-label="Previous world"><svg class="icon"><use href="#i-left"/></svg></button>
+        <button class="btn btn-icon" type="button" id="world-next" aria-label="Next world"><svg class="icon"><use href="#i-right"/></svg></button>
+      </div>
+    </section>
+
+    <section class="stage panel" aria-labelledby="stage-title">
+      <h2 id="stage-title" class="visually-hidden">Hologram</h2>
+      <div class="stage-hud">
+        <span class="chip" id="viz-mode" title="Visualizer input">Ambient animation</span>
+        <span class="chip chip-form" id="form-name" aria-live="polite">—</span>
+      </div>
+      <canvas id="hologram" class="hologram" role="img" aria-label="Music-reactive hologram"></canvas>
+      <div class="stage-controls" role="toolbar" aria-label="Hologram controls">
+        <button class="btn btn-accent" type="button" id="btn-morph"><svg class="icon"><use href="#i-morph"/></svg><span>Morph</span></button>
+        <button class="btn toggle" type="button" id="btn-automorph" aria-pressed="true"><span class="toggle-dot" aria-hidden="true"></span><span>Auto-morph</span></button>
+        <button class="btn toggle" type="button" id="btn-autoworld" aria-pressed="false"><span class="toggle-dot" aria-hidden="true"></span><span>Auto-world</span></button>
+        <button class="btn toggle" type="button" id="btn-pausefx" aria-pressed="false"><svg class="icon"><use href="#i-eye"/></svg><span>Pause visuals</span></button>
+      </div>
+    </section>
+
+    <section class="now-playing panel" aria-labelledby="np-title">
+      <h2 class="section-label">Now playing</h2>
+      <div class="np-body">
+        <div class="np-art" id="np-art" aria-hidden="true"></div>
+        <div class="np-meta">
+          <p id="np-title" class="np-title">—</p>
+          <p id="np-artist" class="np-artist"></p>
+          <p class="np-source"><span id="np-source">REVERB player</span></p>
+        </div>
+      </div>
+      <p id="np-status" class="np-status" role="status" aria-live="polite"></p>
+    </section>
+
+    <aside class="library panel" id="library-panel" aria-labelledby="library-title">
+      <div class="library-head">
+        <h2 id="library-title" class="section-label">Library</h2>
+        <button class="btn btn-icon sheet-close" type="button" id="library-close" aria-label="Close library"><svg class="icon"><use href="#i-close"/></svg></button>
+      </div>
+      <div class="tabs" role="tablist" aria-label="Library views">
+        <button role="tab" id="tab-queue" aria-selected="true" aria-controls="pane-queue" class="tab">Queue</button>
+        <button role="tab" id="tab-sources" aria-selected="false" aria-controls="pane-sources" class="tab" tabindex="-1">Sources</button>
+      </div>
+      <div role="tabpanel" id="pane-queue" aria-labelledby="tab-queue" class="tabpane">
+        <p class="pane-note" id="queue-note"></p>
+        <ol class="queue" id="queue"></ol>
+      </div>
+      <div role="tabpanel" id="pane-sources" aria-labelledby="tab-sources" class="tabpane" hidden>
+        <section class="source" aria-labelledby="src-demo">
+          <h3 id="src-demo">REVERB Originals <span class="badge">Audio-reactive</span></h3>
+          <p>Five original tracks synthesised in your browser. Fully analysable, so the hologram reacts to the real signal.</p>
+          <button class="btn" type="button" id="src-demo-load">Play REVERB Originals</button>
+        </section>
+        <section class="source" aria-labelledby="src-files">
+          <h3 id="src-files">Your audio files <span class="badge">Audio-reactive</span></h3>
+          <p>Pick or drop audio files. They stay on your device and are never uploaded.</p>
+          <label class="dropzone" id="dropzone">
+            <input type="file" id="file-input" accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg,.opus,.flac,.webm" multiple>
+            <span>Choose files or drop them here</span>
+          </label>
+          <button class="btn btn-ghost" type="button" id="src-files-clear" hidden>Remove my files</button>
+        </section>
+        <section class="source" aria-labelledby="src-embed">
+          <h3 id="src-embed">Spotify embed <span class="badge badge-muted">Ambient visuals</span></h3>
+          <p>Paste a Spotify link (track, album, playlist, episode, show, artist). Playback runs inside Spotify’s official embed; its audio can’t be analysed, so the hologram runs in ambient mode (or uses your microphone if you enable it).</p>
+          <form class="inline-form" id="embed-form">
+            <label class="visually-hidden" for="embed-input">Spotify link or URI</label>
+            <input id="embed-input" type="text" inputmode="url" placeholder="https://open.spotify.com/playlist/…" autocomplete="off">
+            <button class="btn" type="submit">Load embed</button>
+          </form>
+        </section>
+        <section class="source" aria-labelledby="src-sdk">
+          <h3 id="src-sdk">Spotify Premium player <span class="badge badge-muted">Needs setup</span></h3>
+          <p id="sdk-note">Uses the Spotify Web Playback SDK. Requires your own Spotify Client ID (Settings), Spotify Premium, and a supported desktop browser.</p>
+          <div class="sdk-actions">
+            <button class="btn" type="button" id="sdk-login">Connect Spotify</button>
+            <button class="btn" type="button" id="sdk-connect" hidden>Start player</button>
+            <button class="btn btn-ghost" type="button" id="sdk-logout" hidden>Sign out</button>
+          </div>
+          <form class="inline-form" id="sdk-form" hidden>
+            <label class="visually-hidden" for="sdk-input">Spotify link to play</label>
+            <input id="sdk-input" type="text" inputmode="url" placeholder="Spotify link to play" autocomplete="off">
+            <button class="btn" type="submit">Play on Spotify</button>
+          </form>
+        </section>
+        <section class="source" aria-labelledby="src-mic">
+          <h3 id="src-mic">Microphone <span class="badge">Audio-reactive</span></h3>
+          <p>Let the hologram listen to the room, for example while Spotify plays on your speakers. Audio is analysed locally and never recorded or sent anywhere.</p>
+          <button class="btn" type="button" id="mic-toggle" aria-pressed="false">Enable microphone</button>
+        </section>
+      </div>
+    </aside>
+
+    <section class="worlds panel" id="worlds-panel" aria-labelledby="worlds-title" tabindex="-1">
+      <div class="worlds-head">
+        <h2 id="worlds-title" class="section-label">Worlds</h2>
+        <p class="worlds-hint" id="worlds-count">13 worlds</p>
+      </div>
+      <ul class="world-grid" id="world-grid" role="list"></ul>
+    </section>
+  </main>
+
+  <div class="provider-surface panel" id="spotify-surface" hidden>
+    <div class="surface-head"><span class="section-label">Spotify embed</span><span class="surface-note">Playback controls inside the embed are Spotify’s own.</span></div>
+    <div class="embed-mount"></div>
+  </div>
+
+  <footer class="player panel" id="player" aria-label="Player">
+    <div class="player-track">
+      <div class="player-art" id="pl-art" aria-hidden="true"></div>
+      <div class="player-meta">
+        <p class="player-title" id="pl-title">Nothing playing</p>
+        <p class="player-artist" id="pl-artist"></p>
+      </div>
+    </div>
+    <div class="player-center">
+      <div class="player-buttons">
+        <button class="btn btn-icon btn-flat" type="button" id="pl-shuffle" aria-label="Shuffle" aria-pressed="false" hidden><svg class="icon"><use href="#i-shuffle"/></svg></button>
+        <button class="btn btn-icon btn-flat" type="button" id="pl-prev" aria-label="Previous track" hidden><svg class="icon"><use href="#i-prev"/></svg></button>
+        <button class="btn btn-icon btn-play" type="button" id="pl-play" aria-label="Play"><svg class="icon"><use href="#i-play"/></svg></button>
+        <button class="btn btn-icon btn-flat" type="button" id="pl-next" aria-label="Next track" hidden><svg class="icon"><use href="#i-next"/></svg></button>
+        <button class="btn btn-icon btn-flat repeat" type="button" id="pl-repeat" aria-label="Repeat: off" hidden><svg class="icon"><use href="#i-repeat"/></svg><span class="repeat-one" aria-hidden="true">1</span></button>
+      </div>
+      <div class="player-progress">
+        <span class="time" id="pl-elapsed">0:00</span>
+        <input type="range" id="pl-seek" class="range" min="0" max="1000" step="1" value="0" aria-label="Seek" aria-valuetext="0:00 of 0:00">
+        <span class="time" id="pl-total">0:00</span>
+      </div>
+    </div>
+    <div class="player-side">
+      <button class="btn btn-icon btn-flat" type="button" id="pl-mute" aria-label="Mute" aria-pressed="false" hidden><svg class="icon"><use href="#i-volume"/></svg></button>
+      <label class="visually-hidden" for="pl-volume">Volume</label>
+      <input type="range" id="pl-volume" class="range range-volume" min="0" max="100" step="1" value="80" hidden>
+      <button class="btn btn-icon btn-flat" type="button" id="pl-queue" aria-label="Open queue" aria-controls="library-panel"><svg class="icon"><use href="#i-queue"/></svg></button>
+      <button class="btn btn-icon btn-flat expand-btn" type="button" id="pl-expand" aria-label="Expand player" aria-expanded="false"><svg class="icon"><use href="#i-chevron-up"/></svg></button>
+    </div>
+  </footer>
+
+  <dialog class="settings panel" id="settings" aria-labelledby="settings-title">
+    <form method="dialog" class="settings-form" id="settings-form">
+      <header class="settings-head">
+        <h2 id="settings-title">Settings</h2>
+        <button class="btn btn-icon" value="close" aria-label="Close settings"><svg class="icon"><use href="#i-close"/></svg></button>
+      </header>
+
+      <fieldset>
+        <legend>Motion</legend>
+        <div class="seg" role="radiogroup" aria-label="Motion">
+          <label><input type="radio" name="motion" value="full"> Full</label>
+          <label><input type="radio" name="motion" value="reduced"> Reduced</label>
+          <label><input type="radio" name="motion" value="static"> Static</label>
+        </div>
+        <p class="hint">Reduced: slow rotation, crossfade morphs, no glitch or tearing, still backdrop. Static: no animation at all. Your system’s reduced-motion preference sets the default.</p>
+      </fieldset>
+
+      <fieldset>
+        <legend>Visuals</legend>
+        <label class="row">Intensity <input type="range" id="set-intensity" min="0" max="100" step="5"><output id="out-intensity"></output></label>
+        <label class="row">Glitch intensity <input type="range" id="set-glitch" min="0" max="100" step="5"><output id="out-glitch"></output></label>
+        <p class="hint">Glitch intensity affects RGB splits, tears and displacement in Cyberpunk, Vaporwave and Glitch Art.</p>
+        <label class="check"><input type="checkbox" id="set-flash"> Reduce flashing</label>
+        <label class="check"><input type="checkbox" id="set-backdrop"> Animated world backdrop</label>
+        <label class="row">Quality
+          <select id="set-quality"><option value="auto">Auto (adapts to performance)</option><option value="high">High</option><option value="low">Low / battery saver</option></select>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Hologram</legend>
+        <label class="row">Auto-morph trigger
+          <select id="set-trigger"><option value="timer">Timer</option><option value="onsets">Every 16 detected onsets (needs real audio)</option></select>
+        </label>
+        <label class="row">Auto-morph every <input type="range" id="set-morph-int" min="4" max="60" step="1"><output id="out-morph-int"></output></label>
+        <label class="row">Auto-world every <input type="range" id="set-world-int" min="15" max="600" step="15"><output id="out-world-int"></output></label>
+        <label class="row">Visualizer input
+          <select id="set-viz"><option value="auto">Auto (REVERB player audio, else ambient)</option><option value="ambient">Ambient animation only</option><option value="mic">Microphone</option></select>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Spotify (optional)</legend>
+        <label class="row">Client ID <input type="text" id="set-client" inputmode="latin" autocomplete="off" spellcheck="false" placeholder="32-character Client ID" pattern="[0-9a-zA-Z]{0,64}"></label>
+        <p class="hint">Only the public Client ID is used (Authorization Code + PKCE). Never paste a Client Secret. Register this exact Redirect URI in your Spotify app: <code id="redirect-uri"></code></p>
+      </fieldset>
+
+      <fieldset>
+        <legend>Keyboard</legend>
+        <dl class="keys">
+          <dt><kbd>Space</kbd></dt><dd>Play / pause</dd>
+          <dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>Seek 5 seconds</dd>
+          <dt><kbd>N</kbd> / <kbd>P</kbd></dt><dd>Next / previous track</dd>
+          <dt><kbd>M</kbd></dt><dd>Morph hologram</dd>
+          <dt><kbd>[</kbd> <kbd>]</kbd></dt><dd>Previous / next world</dd>
+          <dt><kbd>V</kbd></dt><dd>Pause / resume visuals</dd>
+        </dl>
+      </fieldset>
+
+      <footer class="settings-foot">
+        <button class="btn btn-ghost" type="button" id="set-reset">Reset preferences</button>
+        <button class="btn btn-accent" value="close">Done</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <div class="sheet-backdrop" id="sheet-backdrop" hidden></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <noscript><p class="noscript">REVERB // WORLDS needs JavaScript to play music and draw the hologram.</p></noscript>
+</body>
+</html>
