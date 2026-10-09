@@ -42,7 +42,7 @@ export function loadScript(src, timeoutMs = 15000) {
 /* ------------------------------------------------------------------ */
 const AUTH_URL = 'https://accounts.spotify.com/authorize';
 const TOKEN_URL = 'https://accounts.spotify.com/api/token';
-export const SCOPES = ['streaming', 'user-read-email', 'user-read-private', 'user-read-playback-state', 'user-modify-playback-state'];
+export const SCOPES = ['streaming', 'user-read-email', 'user-read-private', 'user-read-playback-state', 'user-modify-playback-state', 'playlist-read-private', 'playlist-read-collaborative'];
 const SS = { verifier: 'rw:pkce:verifier', state: 'rw:pkce:state', token: 'rw:spotify:token' };
 
 const ss = {

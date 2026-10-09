@@ -229,3 +229,14 @@ kbd { font-family: var(--font-mono); border: 1px solid var(--border); border-bot
   *, *::before, *::after { transition-duration: 1ms !important; animation-duration: 1ms !important; }
 }
 html[data-motion="static"] *, html[data-motion="reduced"] * { transition-duration: 1ms !important; }
+
+/* ---------------------------------------------------------------- Spotify playlist picker */
+.playlist-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; }
+.playlist-grid:empty { display: none; }
+.pl-card { display: flex; flex-direction: column; gap: 6px; width: 100%; padding: 6px; text-align: left; border-radius: var(--radius); border: 2px solid transparent; background: rgba(127,127,127,.1); }
+.pl-card:hover { border-color: var(--border); }
+.pl-card[aria-current="true"] { border-color: var(--primary); }
+.pl-cover { width: 100%; aspect-ratio: 1; border-radius: calc(var(--radius) * .6); background: rgba(127,127,127,.25) center / cover no-repeat; display: grid; place-items: center; font-size: 28px; color: var(--muted); }
+.pl-name { font-weight: 700; font-size: 14px; line-height: 1.2; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.pl-meta { font-size: 12px; color: var(--muted); }
+.pl-card[aria-current="true"] .pl-meta::before { content: "▶ Playing · "; color: var(--primary-ink); font-weight: 700; }

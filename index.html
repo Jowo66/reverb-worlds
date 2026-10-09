@@ -112,6 +112,12 @@
         <ol class="queue" id="queue"></ol>
       </div>
       <div role="tabpanel" id="pane-sources" aria-labelledby="tab-sources" class="tabpane" hidden>
+        <section class="source" aria-labelledby="src-playlists">
+          <h3 id="src-playlists">Your Spotify playlists</h3>
+          <p id="playlists-note">Connect Spotify (below) to pick from your playlists here.</p>
+          <div class="sdk-actions"><button class="btn btn-accent" type="button" id="playlists-connect">Connect Spotify</button><button class="btn btn-ghost" type="button" id="playlists-refresh" hidden>Refresh playlists</button></div>
+          <ul class="playlist-grid" id="playlist-grid" role="list"></ul>
+        </section>
         <section class="source" aria-labelledby="src-demo">
           <h3 id="src-demo">REVERB Originals <span class="badge">Audio-reactive</span></h3>
           <p>Five original tracks synthesised in your browser. Fully analysable, so the hologram reacts to the real signal.</p>

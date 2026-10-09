@@ -65,7 +65,11 @@ This lets REVERB act as a Spotify Connect device with full transport controls an
 4. Provide the **Client ID** (it is public), in one of two ways:
    - edit `js/config.js` → `export const SPOTIFY_CLIENT_ID = 'your-client-id';` and commit, **or**
    - paste it in **Settings › Spotify › Client ID**. It is stored only in that browser.
-5. Open Library › Sources › **Connect Spotify** → log in → **Start player** → paste a link → **Play on Spotify**.
+5. Open Library › Sources › **Connect Spotify** and log in. **Your playlists appear as cards**, and clicking one plays it:
+   - with the Premium player connected (it starts automatically after login), it plays inside REVERB with full controls;
+   - otherwise it opens in the Spotify embed.
+
+   Pasting a link still works for albums, tracks and other content. Playlists come from `GET /me/playlists` (scopes `playlist-read-private` and `playlist-read-collaborative`), which Spotify's February 2026 migration guide keeps available to Development-Mode apps.
 
 Known caveat: Spotify developers have reported cases where `player.connect()` never becomes ready for Development-Mode apps after the 2026 changes. REVERB shows a clear message after 15 s instead of pretending to be connected.
 
@@ -103,7 +107,7 @@ python3 -m http.server 8765 --bind 127.0.0.1 &
 python3 reverb-worlds/tests/smoke_test.py http://127.0.0.1:8765/reverb-worlds/ ./shots
 ```
 
-Spotify integrations against **mocked** Spotify endpoints (25 checks: PKCE parameters, token exchange without a secret, SDK device transfer, transport calls, shuffle/repeat API calls, embed controller wiring, invalid-link errors). This proves REVERB's side of the contract, not that Spotify accepts your app:
+Spotify integrations against **mocked** Spotify endpoints (30 checks: playlist listing and click-to-play, PKCE parameters, token exchange without a secret, SDK device transfer, transport calls, shuffle/repeat API calls, embed controller wiring, invalid-link errors). This proves REVERB's side of the contract, not that Spotify accepts your app:
 
 ```bash
 python3 reverb-worlds/tests/spotify_mock_test.py http://127.0.0.1:8765/reverb-worlds/

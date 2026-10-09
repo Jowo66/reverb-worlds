@@ -114,11 +114,36 @@ export class SpotifySdkProvider extends EventTarget {
     catch (e) { this._set('error', e.message); }
   }
 
-  async _api(method, path, body) {
+  /** The signed-in user's playlists (GET /me/playlists — available to Development-Mode apps in 2026). */
+  async fetchPlaylists(max = 500) {
+    const out = [];
+    let path = '/me/playlists?limit=50';
+    while (path && out.length < max) {
+      const res = await this._api('GET', path, undefined, 'list your playlists');
+      const j = await res.json();
+      for (const p of j.items || []) {
+        if (!p) continue;
+        const imgs = p.images || [];
+        out.push({
+          id: p.id, name: p.name, uri: p.uri, url: p.external_urls?.spotify || `https://open.spotify.com/playlist/${p.id}`,
+          image: (imgs.find(i => (i.width || 300) <= 320) || imgs[0])?.url || null,
+          // Feb 2026 renamed playlist `tracks` → `items`; support both shapes.
+          count: p.items?.total ?? p.tracks?.total ?? null,
+          owner: p.owner?.display_name || '',
+        });
+      }
+      path = j.next ? j.next.replace('https://api.spotify.com/v1', '') : null;
+    }
+    return out;
+  }
+
+  async _api(method, path, body, what = '') {
     const token = await getAccessToken(this.getClientId());
     if (!token) throw new Error('Not signed in to Spotify.');
     const res = await fetch(API + path, { method, headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
-    if (res.status === 403) throw new Error('Spotify refused the request (403). Premium is required, and Development-Mode apps only allow users on the app’s allow-list.');
+    if (res.status === 403) throw new Error(what
+      ? `Spotify refused to ${what} (403). Sign out and connect again to grant the new permission, and make sure your account is on the app’s User Management allow-list.`
+      : 'Spotify refused the request (403). Premium is required, and Development-Mode apps only allow users on the app’s allow-list.');
     if (res.status === 404) throw new Error('No active Spotify device (404). Reconnect the player.');
     if (!res.ok && res.status !== 204) { let msg = `HTTP ${res.status}`; try { msg = (await res.json()).error?.message || msg; } catch {} throw new Error(`Spotify API: ${msg}`); }
     return res;

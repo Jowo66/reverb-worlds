@@ -398,6 +398,7 @@ function updateSdkUi() {
   $('#sdk-connect').hidden = !signedIn || connected;
   $('#sdk-logout').hidden = !signedIn;
   $('#sdk-form').hidden = !connected;
+  if (typeof updatePlaylistsUi === 'function') updatePlaylistsUi();
   const note = $('#sdk-note');
   if (!configured) note.textContent = 'Not configured: add your Spotify Client ID in Settings. Requires Spotify Premium and a supported desktop browser.';
   else if (player.active === sdk && sdk.message) note.textContent = sdk.message;
@@ -405,8 +406,65 @@ function updateSdkUi() {
   else note.textContent = 'Client ID set. Connect with a Spotify Premium account (Development-Mode apps only allow users you add in the dashboard).';
 }
 $('#sdk-login').addEventListener('click', () => sdk.login());
+
+/* ---------------- Spotify playlist picker ---------------- */
+let playlists = [], currentPlaylist = null, playlistsLoading = false;
+function updatePlaylistsUi() {
+  const configured = !!clientId(), signedIn = sdk.signedIn;
+  $('#playlists-connect').hidden = signedIn;
+  $('#playlists-connect').disabled = !configured;
+  $('#playlists-refresh').hidden = !signedIn;
+  const note = $('#playlists-note');
+  if (!configured) note.textContent = 'Add your Spotify Client ID in Settings, then connect to pick from your playlists.';
+  else if (!signedIn) note.textContent = 'Connect Spotify to pick from your playlists here.';
+  else if (playlistsLoading) note.textContent = 'Loading your playlists…';
+  else if (!playlists.length) note.textContent = note.dataset.error || 'No playlists found on this account.';
+  else note.textContent = sdk.deviceId ? `${playlists.length} playlists — click one to play it here (Spotify Premium player).` : `${playlists.length} playlists — click one to open it in the Spotify embed. Start the Premium player below for full controls.`;
+}
+function renderPlaylists() {
+  const q = ($('#search').value || '').trim().toLowerCase();
+  $('#playlist-grid').replaceChildren(...playlists.filter(p => !q || `${p.name} ${p.owner}`.toLowerCase().includes(q)).map(p => {
+    const li = document.createElement('li');
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'pl-card';
+    if (currentPlaylist === p.id) b.setAttribute('aria-current', 'true');
+    b.setAttribute('aria-label', `Play playlist ${p.name}${p.count != null ? `, ${p.count} tracks` : ''}`);
+    b.innerHTML = '<span class="pl-cover" aria-hidden="true"></span><span class="pl-name"></span><span class="pl-meta"></span>';
+    const cover = b.querySelector('.pl-cover');
+    if (p.image) cover.style.backgroundImage = `url("${p.image.replace(/"/g, '%22')}")`; else cover.textContent = '♪';
+    b.querySelector('.pl-name').textContent = p.name;
+    b.querySelector('.pl-meta').textContent = [p.count != null ? `${p.count} tracks` : '', p.owner].filter(Boolean).join(' · ');
+    b.addEventListener('click', () => playPlaylist(p));
+    li.append(b);
+    return li;
+  }));
+  updatePlaylistsUi();
+}
+async function loadPlaylists() {
+  if (!sdk.signedIn || playlistsLoading) return;
+  playlistsLoading = true; $('#playlists-note').dataset.error = ''; updatePlaylistsUi();
+  try { playlists = await sdk.fetchPlaylists(); }
+  catch (err) { playlists = []; $('#playlists-note').dataset.error = `Couldn’t load playlists: ${err.message}`; }
+  playlistsLoading = false;
+  renderPlaylists();
+}
+async function playPlaylist(p) {
+  analyser.ensureContext();
+  currentPlaylist = p.id; renderPlaylists();
+  if (sdk.deviceId) {
+    await player.use('spotify-sdk');
+    await sdk.playLink(p.uri);
+    if (player.state.status !== 'error') toast(`Playing “${p.name}” on Spotify.`);
+  } else {
+    await player.use('spotify-embed');
+    if (await embed.load(p.url)) toast(`“${p.name}” loaded in the Spotify embed — press play.`);
+  }
+}
+$('#playlists-connect').addEventListener('click', () => sdk.login());
+$('#playlists-refresh').addEventListener('click', loadPlaylists);
+$('#search').addEventListener('input', () => { if (playlists.length) renderPlaylists(); });
 $('#sdk-connect').addEventListener('click', async () => { await player.use('spotify-sdk'); await sdk.connect(); });
-$('#sdk-logout').addEventListener('click', async () => { await sdk.logout(); await player.use('media'); updateSdkUi(); });
+$('#sdk-logout').addEventListener('click', async () => { await sdk.logout(); playlists = []; currentPlaylist = null; renderPlaylists(); await player.use('media'); updateSdkUi(); });
 $('#sdk-form').addEventListener('submit', async e => { e.preventDefault(); await player.use('spotify-sdk'); await sdk.playLink($('#sdk-input').value); });
 
 $('#mic-toggle').addEventListener('click', async () => {
@@ -574,8 +632,9 @@ async function boot() {
   if (redirect.handled) {
     openLibrary(true, 'sources');
     if (redirect.error) toast(redirect.error, 6000);
-    else { toast('Signed in to Spotify. Starting the player…'); await player.use('spotify-sdk'); await sdk.connect(); }
-  }
+    else { toast('Signed in to Spotify. Loading your playlists…'); loadPlaylists(); await player.use('spotify-sdk'); await sdk.connect(); }
+  } else if (sdk.signedIn) loadPlaylists();
+  updatePlaylistsUi();
   // Expose a tiny debug/test surface (no secrets, no playback internals).
   window.__reverb = { engine, backdrop, player, themeManager, settings, analyser, media, embed, sdk };
 }

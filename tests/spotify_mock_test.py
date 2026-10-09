@@ -61,6 +61,12 @@ with sync_playwright() as p:
         route.fulfill(status=200, content_type="application/json", body=json.dumps({"access_token": "tok-1", "refresh_token": "ref-1", "expires_in": 3600, "scope": "streaming"}))
     def api(route):
         seen["api"].append((route.request.method, route.request.url, route.request.post_data))
+        if route.request.method == "GET" and "/me/playlists" in route.request.url:
+            body = {"items": [
+                {"id": "37i9dQZF1DX0XUsuxWHRQd", "name": "Late Night Drive", "uri": "spotify:playlist:37i9dQZF1DX0XUsuxWHRQd", "external_urls": {"spotify": "https://open.spotify.com/playlist/37i9dQZF1DX0XUsuxWHRQd"}, "images": [{"url": "data:image/gif;base64,R0lGODlhAQABAAAAACw=", "width": 300}], "items": {"total": 42}, "owner": {"display_name": "Jowo"}},
+                {"id": "37i9dQZF1DWZeKCadgRdKQ", "name": "Focus", "uri": "spotify:playlist:37i9dQZF1DWZeKCadgRdKQ", "external_urls": {"spotify": "https://open.spotify.com/playlist/37i9dQZF1DWZeKCadgRdKQ"}, "images": [], "tracks": {"total": 7}, "owner": {"display_name": "Jowo"}}],
+                "next": None}
+            return route.fulfill(status=200, content_type="application/json", body=json.dumps(body))
         route.fulfill(status=204, body="")
     ctx.route("https://accounts.spotify.com/authorize*", authorize)
     ctx.route("https://accounts.spotify.com/api/token", token)
@@ -91,6 +97,20 @@ with sync_playwright() as p:
     check("SDK exposes full transport controls", not any(hidden), hidden)
     check("queue items are not clickable (read-only)", pg.evaluate("document.querySelectorAll('#queue button').length") == 0)
     check("visualizer stays ambient for SDK audio", "Ambient" in pg.inner_text("#viz-mode"), pg.inner_text("#viz-mode"))
+    a2 = seen["authorize"]
+    check("authorize: playlist-read scopes requested", "playlist-read-private" in a2["scope"][0])
+    pg.click("#tab-sources")
+    pg.wait_for_function("document.querySelectorAll('#playlist-grid .pl-card').length === 2", timeout=8000)
+    names = pg.evaluate("[...document.querySelectorAll('#playlist-grid .pl-name')].map(e=>e.textContent)")
+    metas = pg.evaluate("[...document.querySelectorAll('#playlist-grid .pl-meta')].map(e=>e.textContent)")
+    check("playlists listed after login (both 2026 'items' and legacy 'tracks' counts)", names == ["Late Night Drive", "Focus"] and metas[0].startswith("42 tracks") and metas[1].startswith("7 tracks"), (names, metas))
+    pg.click("#playlist-grid .pl-card >> nth=0")
+    wait_until(lambda: any("/me/player/play" in u and "spotify:playlist:37i9dQZF1DX0XUsuxWHRQd" in (d or "") for _, u, d in seen["api"]), page=pg)
+    check("clicking a playlist plays it on the REVERB device", any("/me/player/play" in u and "spotify:playlist:37i9dQZF1DX0XUsuxWHRQd" in (d or "") for _, u, d in seen["api"]))
+    check("playing playlist is marked", pg.get_attribute("#playlist-grid .pl-card >> nth=0", "aria-current") == "true")
+    pg.fill("#search", "focus"); time.sleep(0.2)
+    check("search filters playlists", pg.evaluate("document.querySelectorAll('#playlist-grid .pl-card').length") == 1)
+    pg.fill("#search", "")
     pg.click("#pl-next"); pg.click("#pl-play")
     pg.evaluate("window.__reverb.player.seek(42)")
     calls = pg.evaluate("window.__mockCalls")
@@ -101,7 +121,7 @@ with sync_playwright() as p:
     check("shuffle & repeat via Web API", any("/me/player/shuffle?state=true" in u for u in urls) and any("/me/player/repeat?state=context" in u for u in urls))
     pg.click("#tab-sources"); pg.fill("#sdk-input", "https://open.spotify.com/album/1A2GTWGtFfWp7KSQTwWOyo")
     pg.click("#sdk-form button[type=submit]")
-    wait_until(lambda: any("/me/player/play?device_id=dev-123" in u for _, u, _ in seen["api"]), page=pg)
+    wait_until(lambda: any("/me/player/play?device_id=dev-123" in u and "1A2GTWGtFfWp7KSQTwWOyo" in (d or "") for _, u, d in seen["api"]), page=pg)
     play = [d for m, u, d in seen["api"] if "/me/player/play?device_id=dev-123" in u]
     check("Play on Spotify sends context_uri", play and json.loads(play[-1])["context_uri"] == "spotify:album:1A2GTWGtFfWp7KSQTwWOyo", play[-1:] )
     check("token kept in sessionStorage, not localStorage", pg.evaluate("!!sessionStorage.getItem('rw:spotify:token') && !JSON.stringify(localStorage).includes('tok-1')"))
