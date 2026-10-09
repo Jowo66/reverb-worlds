@@ -53,7 +53,8 @@ const ss = {
 
 /** The exact URL that must be registered as a Redirect URI in the Spotify dashboard. */
 export function redirectUri() {
-  return location.origin + location.pathname;
+  // Normalise so /reverb-worlds/ and /reverb-worlds/index.html register as one URI.
+  return location.origin + location.pathname.replace(/index\.html$/, '');
 }
 
 function randomString(len = 64) {
