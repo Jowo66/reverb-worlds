@@ -462,6 +462,8 @@ async function playPlaylist(p) {
   }
 }
 $('#playlists-connect').addEventListener('click', () => sdk.login());
+// When Play is pressed with nothing loaded on the Spotify device, show the playlist picker.
+sdk.addEventListener('needs-selection', () => { if (sdk.hasTrack) return; openLibrary(true, 'sources'); $('#src-playlists').scrollIntoView({ block: 'start', behavior: 'smooth' }); if (!playlists.length) loadPlaylists(); });
 $('#playlists-refresh').addEventListener('click', loadPlaylists);
 $('#search').addEventListener('input', () => { if (playlists.length) renderPlaylists(); });
 $('#sdk-connect').addEventListener('click', async () => { await player.use('spotify-sdk'); await sdk.connect(); });

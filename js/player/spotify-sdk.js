@@ -93,7 +93,9 @@ export class SpotifySdkProvider extends EventTarget {
     player.addListener('initialization_error', ({ message }) => this._set('unavailable', `This browser can’t run the Spotify SDK: ${message}`));
     player.addListener('authentication_error', ({ message }) => { logout(); this._set('auth-required', `Spotify authentication failed: ${message}`); });
     player.addListener('account_error', ({ message }) => this._set('error', `Spotify account error (Premium required, or your account isn’t on this app’s Development-Mode allow-list): ${message}`));
-    player.addListener('playback_error', ({ message }) => this._set('error', `Spotify playback error: ${message}`));
+    player.addListener('playback_error', ({ message }) => this._set('error', /no list was loaded/i.test(message || '')
+      ? 'Nothing is loaded on the Spotify player yet — pick one of your playlists in Library › Sources.'
+      : `Spotify playback error: ${message}`));
     player.addListener('player_state_changed', s => {
       this.sdkState = s; this.stateAt = performance.now();
       if (!s) return this._set('ready', 'Playback moved to another device.');
@@ -149,9 +151,25 @@ export class SpotifySdkProvider extends EventTarget {
     return res;
   }
 
-  play() { return this.player?.resume(); }
+  /** True when the SDK has a track loaded (otherwise resume/toggle fail with “no list was loaded”). */
+  get hasTrack() { return !!this.sdkState?.track_window?.current_track; }
+
+  /** Start something when nothing is loaded: resume the account's last context on this device. */
+  async _startFromIdle() {
+    if (!this.deviceId) return this._set('error', 'Connect the Spotify player first.');
+    this.player.activateElement?.();
+    try {
+      await this._api('PUT', `/me/player/play?device_id=${encodeURIComponent(this.deviceId)}`);
+      setTimeout(() => { if (!this.hasTrack) this._set('ready', 'Pick one of your playlists in Library › Sources to start playing.'); this.dispatchEvent(new Event('needs-selection')); }, 2500);
+    } catch {
+      this._set('ready', 'Pick one of your playlists in Library › Sources to start playing.');
+      this.dispatchEvent(new Event('needs-selection'));
+    }
+  }
+
+  play() { return this.hasTrack ? this.player?.resume() : this._startFromIdle(); }
   pause() { return this.player?.pause(); }
-  toggle() { this.player?.activateElement?.(); return this.player?.togglePlay(); }
+  toggle() { this.player?.activateElement?.(); return this.hasTrack ? this.player?.togglePlay() : this._startFromIdle(); }
   next() { return this.player?.nextTrack(); }
   previous() { return this.player?.previousTrack(); }
   seek(sec) { return this.player?.seek(Math.round(sec * 1000)); }

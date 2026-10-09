@@ -119,6 +119,11 @@ with sync_playwright() as p:
     wait_until(lambda: any("/me/player/repeat" in u for _, u, _ in seen["api"]) and any("/me/player/shuffle" in u for _, u, _ in seen["api"]), page=pg)
     urls = [u for _, u, _ in seen["api"]]
     check("shuffle & repeat via Web API", any("/me/player/shuffle?state=true" in u for u in urls) and any("/me/player/repeat?state=context" in u for u in urls))
+    # Play with nothing loaded on the device → resume last context instead of a raw SDK error
+    pg.evaluate("window.__reverb.sdk.sdkState = null")
+    n0 = len(seen["api"]); pg.click("#pl-play")
+    wait_until(lambda: any(m == "PUT" and u.endswith("/me/player/play?device_id=dev-123") and not d for m, u, d in seen["api"][n0:]), page=pg)
+    check("Play with nothing loaded resumes last Spotify context (no 'no list was loaded' error)", any(m == "PUT" and u.endswith("/me/player/play?device_id=dev-123") and not d for m, u, d in seen["api"][n0:]) and "no list" not in pg.inner_text("#np-status"))
     pg.click("#tab-sources"); pg.fill("#sdk-input", "https://open.spotify.com/album/1A2GTWGtFfWp7KSQTwWOyo")
     pg.click("#sdk-form button[type=submit]")
     wait_until(lambda: any("/me/player/play?device_id=dev-123" in u and "1A2GTWGtFfWp7KSQTwWOyo" in (d or "") for _, u, d in seen["api"]), page=pg)
