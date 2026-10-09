@@ -350,10 +350,12 @@ export class HologramEngine {
     /* --- features & reactions --- */
     const f = still ? { bass: 0.25, mid: 0.25, high: 0.2, energy: 0.3 } : (this.hooks.getFeatures?.() || {});
     const sm = this.smooth, k = 1 - Math.exp(-dt * 10);
-    sm.bass = still ? 0.25 : lerp(sm.bass, f.bass || 0, k);
+    // fast attack / smooth release so pulses land on the beat instead of lagging behind it
+    const kr = 1 - Math.exp(-dt * 7);
+    sm.bass = still ? 0.25 : ((f.bass || 0) > sm.bass ? lerp(sm.bass, f.bass, 0.85) : lerp(sm.bass, f.bass || 0, kr));
     sm.mid = still ? 0.25 : lerp(sm.mid, f.mid || 0, k);
     sm.high = still ? 0.2 : lerp(sm.high, f.high || 0, k);
-    sm.energy = still ? 0.3 : lerp(sm.energy, f.energy || 0, k);
+    sm.energy = still ? 0.3 : ((f.energy || 0) > sm.energy ? lerp(sm.energy, f.energy, 0.7) : lerp(sm.energy, f.energy || 0, kr));
     if (!still) {
       if (f.kick) { this._react('kick'); this.hooks.onOnset?.('kick'); }
       if (f.snare) { this._react('snare'); this.hooks.onOnset?.('snare'); }
@@ -395,7 +397,7 @@ export class HologramEngine {
     /* --- transform & project --- */
     const R = Math.min(W, H) * 0.37;
     const pulseAmt = (motion === 'full' ? 1 : 0.3) * I;
-    const scaleK = 1 + this.env.pulse * 0.12 * pulseAmt + sm.bass * 0.09 * pulseAmt;
+    const scaleK = 1 + this.env.pulse * 0.2 * pulseAmt + sm.bass * 0.16 * pulseAmt;
     const comp = this.env.compress * 0.2 * pulseAmt, lift = this.env.lift * 0.14 * pulseAmt;
     const cx = W / 2, cy = H / 2, F = 3.4;
     const ortho = !!this.mat.flat;
@@ -755,7 +757,7 @@ export class HologramEngine {
     const I = this.opts.intensity;
     if (I <= 0.01) return;
     // Generic envelopes shared with the world backdrop.
-    if (kind === 'kick') this.env.k = 1; else this.env.s = 1;
+    if (kind === 'kick') { this.env.k = 1; this.env.pulse = Math.max(this.env.pulse, 0.55); } else this.env.s = 1;
     const P = this.theme.palette, now = this.time;
     const full = this.opts.motion === 'full';
     const g = this.theme.a11y?.glitchy ? this.opts.glitch : 1;

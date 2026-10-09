@@ -80,26 +80,67 @@ export class AudioAnalyser {
     }
   }
 
+  /** Route an external live stream (microphone or captured tab audio) into its own analyser. */
+  _attachStream(stream, kind) {
+    this.disableExternal();
+    const src = this.ctx.createMediaStreamSource(stream);
+    this.micAnalyser = this._makeAnalyser();
+    src.connect(this.micAnalyser); // never to destination — no feedback / double audio
+    this.mic = { stream, src, kind };
+    this.state = this._freshState();
+    // If the user stops sharing from the browser UI, drop back cleanly.
+    stream.getAudioTracks().forEach(t => t.addEventListener('ended', () => { if (this.mic?.stream === stream) { this.disableExternal(); this.onExternalEnded?.(kind); } }));
+  }
+
   async enableMicrophone() {
     if (!navigator.mediaDevices?.getUserMedia) throw new Error('Microphone input is not supported in this browser.');
     if (!this.ensureContext()) throw new Error('Web Audio is not supported in this browser.');
-    if (this.mic) return;
     const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
-    const src = this.ctx.createMediaStreamSource(stream);
-    this.micAnalyser = this._makeAnalyser();
-    src.connect(this.micAnalyser); // never to destination — no feedback
-    this.mic = { stream, src };
+    this._attachStream(stream, 'mic');
   }
 
-  disableMicrophone() {
+  /**
+   * Capture this tab's own audio (Chrome / Edge: the user picks “This tab” and
+   * keeps “Share tab audio” on). Whether DRM-protected Spotify audio comes
+   * through is up to the browser — callers check for silence and say so.
+   */
+  async enableTabCapture() {
+    if (!navigator.mediaDevices?.getDisplayMedia) throw new Error('Tab audio capture is not supported in this browser (try Chrome or Edge on desktop).');
+    if (!this.ensureContext()) throw new Error('Web Audio is not supported in this browser.');
+    const stream = await navigator.mediaDevices.getDisplayMedia({
+      video: true, // required by browsers; the video track is stopped immediately
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, suppressLocalAudioPlayback: false },
+      preferCurrentTab: true, selfBrowserSurface: 'include', surfaceSwitching: 'exclude', systemAudio: 'include',
+    });
+    stream.getVideoTracks().forEach(t => t.stop());
+    if (!stream.getAudioTracks().length) {
+      stream.getTracks().forEach(t => t.stop());
+      throw new Error('No audio was shared. Choose “This tab” and keep “Also share tab audio” switched on.');
+    }
+    this._attachStream(stream, 'tab');
+  }
+
+  disableExternal() {
     if (!this.mic) return;
     this.mic.stream.getTracks().forEach(t => t.stop());
     try { this.mic.src.disconnect(); } catch {}
     this.mic = null;
     this.micAnalyser = null;
   }
+  disableMicrophone() { this.disableExternal(); }
 
-  get micEnabled() { return !!this.mic; }
+  /** 'mic' | 'tab' | null */
+  get externalKind() { return this.mic?.kind || null; }
+  get micEnabled() { return this.mic?.kind === 'mic'; }
+
+  /** Raw (un-normalised) level 0..1 of the external stream — used to detect silent captures. */
+  rawLevel() {
+    const an = this.micAnalyser;
+    if (!an) return 0;
+    an.getByteFrequencyData(an.buf);
+    let s = 0; for (let i = 0; i < an.buf.length; i++) s += an.buf[i];
+    return s / (an.buf.length * 255);
+  }
 
   setInput(input) {
     if (input !== this.input) { this.input = input; this.state = this._freshState(); }
@@ -115,7 +156,7 @@ export class AudioAnalyser {
 
   /** Called once per animation frame by the engine via getFeatures(). */
   read(nowMs) {
-    const an = this.input === 'mic' ? this.micAnalyser : this.mediaAnalyser;
+    const an = this.input === 'ext' ? this.micAnalyser : this.mediaAnalyser;
     const st = this.state;
     if (!this.ctx || !an) return { bass: 0, mid: 0, high: 0, energy: 0, kick: false, snare: false, real: false };
     an.getByteFrequencyData(an.buf);
@@ -152,9 +193,23 @@ export class AudioAnalyser {
  * audio; it simply gives the hologram gentle "beat-inspired" movement.
  */
 export class AmbientSource {
-  constructor() { this.t = 0; this.nextKick = 0.8; this.nextSnare = 1.6; this.rng = Math.random; }
+  constructor() { this.t = 0; this.nextKick = 0.8; this.nextSnare = 1.6; this.rng = Math.random; this.bpm = 0; this.anchor = 0; this.lastBeat = -1; }
+
+  /** Lock pulses to a tapped tempo: beats fall exactly on anchorMs + n·(60000/bpm). */
+  setTempo(bpm, anchorMs) { this.bpm = bpm; this.anchor = anchorMs; this.lastBeat = Math.floor((performance.now() - anchorMs) / (60000 / bpm)); }
+  clearTempo() { this.bpm = 0; }
+
   read(dt) {
     this.t += dt;
+    if (this.bpm) {
+      const period = 60000 / this.bpm, x = (performance.now() - this.anchor) / period;
+      const beat = Math.floor(x), ph = x - beat;
+      const kick = beat > this.lastBeat;
+      const snare = kick && ((beat % 2) + 2) % 2 === 1; // backbeat on 2 and 4
+      if (kick) this.lastBeat = beat;
+      const env = Math.exp(-ph * 5);
+      return { bass: 0.2 + 0.75 * env, mid: 0.3 + 0.3 * env, high: 0.25 + 0.3 * Math.exp(-((x * 2) % 1) * 6), energy: 0.3 + 0.5 * env, kick, snare, real: false };
+    }
     const t = this.t;
     const kick = t >= this.nextKick, snare = t >= this.nextSnare;
     if (kick) this.nextKick = t + 1.15 + this.rng() * 0.9;

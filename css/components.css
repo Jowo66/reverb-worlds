@@ -183,9 +183,18 @@ button.queue-item:hover { border-color: var(--border); }
 }
 
 /* ---------------------------------------------------------------- provider surface */
-.surface-head { display: flex; flex-direction: column; gap: 2px; margin-bottom: 8px; }
-.surface-note { font-size: 12px; color: var(--muted); }
-.embed-mount iframe { border: 0; border-radius: 12px; width: 100%; display: block; }
+/* Spotify embed docked in the player bar */
+.player-embed { min-width: 0; }
+.player-embed .embed-mount, .player-embed .embed-mount > * { width: 100%; }
+.player-embed iframe { border: 0; border-radius: 12px; width: 100%; height: 80px; display: block; }
+.player.player--embed .player-center { display: none; }
+@media (max-width: 700px) {
+  .player.player--embed { grid-template-columns: 1fr auto; grid-template-areas: "embed embed" "track side"; row-gap: 6px; }
+  .player.player--embed .player-embed { grid-area: embed; }
+  .player.player--embed .player-track { grid-area: track; }
+  .player.player--embed .player-side { grid-area: side; }
+  .player.player--embed .player-track .player-art { display: none; }
+}
 
 /* ---------------------------------------------------------------- settings dialog */
 .settings {

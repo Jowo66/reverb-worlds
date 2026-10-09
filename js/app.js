@@ -55,27 +55,33 @@ const sdk = player.register(new SpotifySdkProvider(clientId));
 let vizMode = 'ambient';
 function resolveVizMode() {
   const pref = settings.get('vizInput');
-  if (pref === 'ambient') return 'ambient';
-  if (pref === 'mic' || analyser.micEnabled) return analyser.micEnabled ? 'mic' : 'ambient';
+  const idle = ambient.bpm ? 'beat' : 'ambient';
+  if (pref === 'ambient') return idle;
+  const ext = analyser.externalKind; // 'mic' | 'tab' | null
+  if (ext) return ext;
+  if (pref === 'mic') return idle;
   const caps = player.capabilities, st = player.state;
   if (caps.analysable && st.playing) return 'player';
-  return 'ambient';
+  return idle;
 }
 function updateVizChip() {
   const mode = resolveVizMode();
   if (mode !== vizMode || !updateVizChip.done) {
     vizMode = mode; updateVizChip.done = true;
-    analyser.setInput(mode === 'mic' ? 'mic' : 'media');
+    analyser.setInput(mode === 'mic' || mode === 'tab' ? 'ext' : 'media');
     const chip = $('#viz-mode');
     const spotify = player.active?.id?.startsWith('spotify');
     const labels = {
       player: ['Audio reactive · REVERB player', 'The hologram analyses the audio playing in this page (approximate onset detection, not exact beat tracking).'],
       mic: ['Audio reactive · Microphone', 'The hologram analyses your microphone input locally. Nothing is recorded or sent.'],
-      ambient: [spotify ? 'Ambient animation · not synced to Spotify' : 'Ambient animation', spotify ? 'Spotify audio is protected and cannot be analysed in the browser. Enable the microphone in Library › Sources for audio-reactive visuals.' : 'Not driven by audio. Play REVERB Originals, your own files or enable the microphone for audio-reactive visuals.'],
+      tab: ['Audio reactive · Tab audio', 'The hologram analyses this tab’s own audio, shared by you. Nothing is recorded or sent.'],
+      beat: [`Beat clock · ${Math.round(ambient.bpm)} BPM (tapped)`, 'Pulses are locked to the tempo you tapped — not analysed from the audio. Tap again to re-sync.'],
+      ambient: [spotify ? 'Ambient animation · not synced to Spotify' : 'Ambient animation', spotify ? 'Spotify audio is protected and cannot be analysed in the browser. Use Tap tempo (T), or Library › Sources › Live audio (microphone or tab capture), to sync the hologram.' : 'Not driven by audio. Play REVERB Originals, your own files or enable the microphone for audio-reactive visuals.'],
     };
     chip.textContent = labels[mode][0];
     chip.title = labels[mode][1];
     chip.dataset.live = mode !== 'ambient' ? 'true' : 'false';
+    $('#btn-tap-clear').hidden = !ambient.bpm;
   }
 }
 
@@ -85,7 +91,7 @@ function getFeatures() {
   const now = performance.now(), dt = Math.min(0.1, (now - lastFeat) / 1000);
   lastFeat = now;
   updateVizChip();
-  if (vizMode === 'ambient') return ambient.read(dt);
+  if (vizMode === 'ambient' || vizMode === 'beat') return ambient.read(dt);
   return analyser.read(now);
 }
 
@@ -556,23 +562,59 @@ $('#sdk-connect').addEventListener('click', async () => { await player.use('spot
 $('#sdk-logout').addEventListener('click', async () => { await sdk.logout(); playlists = []; currentPlaylist = null; renderPlaylists(); await player.use('media'); updateSdkUi(); });
 $('#sdk-form').addEventListener('submit', async e => { e.preventDefault(); await player.use('spotify-sdk'); await sdk.playLink($('#sdk-input').value); });
 
-$('#mic-toggle').addEventListener('click', async () => {
-  const btn = $('#mic-toggle');
-  if (analyser.micEnabled) {
-    analyser.disableMicrophone();
-    btn.textContent = 'Enable microphone'; btn.setAttribute('aria-pressed', 'false');
-    toast('Microphone off.');
-  } else {
-    try {
-      await analyser.enableMicrophone();
-      btn.textContent = 'Disable microphone'; btn.setAttribute('aria-pressed', 'true');
-      toast('Microphone on — the hologram now reacts to the room.');
-    } catch (err) {
-      toast(err.name === 'NotAllowedError' ? 'Microphone permission was denied.' : `Microphone unavailable: ${err.message}`, 4500);
-    }
-  }
+function syncLiveInputUi() {
+  const k = analyser.externalKind;
+  $('#mic-toggle').textContent = k === 'mic' ? 'Stop microphone' : 'Use microphone';
+  $('#mic-toggle').setAttribute('aria-pressed', String(k === 'mic'));
+  $('#tab-toggle').textContent = k === 'tab' ? 'Stop tab audio' : 'Capture this tab’s audio';
+  $('#tab-toggle').setAttribute('aria-pressed', String(k === 'tab'));
   updateVizChip.done = false; updateVizChip();
+}
+analyser.onExternalEnded = kind => { toast(kind === 'tab' ? 'Tab audio sharing stopped.' : 'Microphone stopped.'); syncLiveInputUi(); };
+$('#mic-toggle').addEventListener('click', async () => {
+  if (analyser.externalKind === 'mic') { analyser.disableExternal(); toast('Microphone off.'); return syncLiveInputUi(); }
+  try { await analyser.enableMicrophone(); toast('Microphone on — the hologram now reacts to what it hears.'); }
+  catch (err) { toast(err.name === 'NotAllowedError' ? 'Microphone permission was denied.' : `Microphone unavailable: ${err.message}`, 4500); }
+  syncLiveInputUi();
 });
+$('#tab-toggle').addEventListener('click', async () => {
+  if (analyser.externalKind === 'tab') { analyser.disableExternal(); toast('Tab audio capture off.'); return syncLiveInputUi(); }
+  try {
+    await analyser.enableTabCapture();
+    toast('Listening to this tab’s audio…');
+    syncLiveInputUi();
+    // Spotify's audio is DRM-protected; some browsers deliver it silent to captures. Check honestly.
+    setTimeout(() => {
+      if (analyser.externalKind !== 'tab') return;
+      const playing = player.state.playing || player.state.status === 'playing';
+      let peak = 0; for (let i = 0; i < 10; i++) peak = Math.max(peak, analyser.rawLevel());
+      if (playing && peak < 0.004) {
+        analyser.disableExternal(); syncLiveInputUi();
+        toast('The tab capture is silent — your browser blocks protected Spotify audio from being captured. Use the microphone or Tap tempo instead.', 8000);
+      }
+    }, 4000);
+  } catch (err) {
+    toast(err.name === 'NotAllowedError' ? 'Tab audio sharing was cancelled.' : err.message, 6000);
+    syncLiveInputUi();
+  }
+});
+
+/* ---------------- Tap tempo (beat clock) ---------------- */
+let taps = [];
+function tapTempo() {
+  const now = performance.now();
+  if (taps.length && now - taps[taps.length - 1] > 2000) taps = [];
+  taps.push(now);
+  if (taps.length > 9) taps.shift();
+  if (taps.length < 4) { toast(`Tap along to the beat… ${taps.length}/4`, 1200); return; }
+  const iv = taps.slice(1).map((t, i) => t - taps[i]).sort((a, b) => a - b);
+  const bpm = Math.max(50, Math.min(220, 60000 / iv[Math.floor(iv.length / 2)]));
+  ambient.setTempo(bpm, now);
+  updateVizChip.done = false; updateVizChip();
+  toast(`Beat clock locked at ${Math.round(bpm)} BPM. Keep tapping to fine-tune.`, 1600);
+}
+$('#btn-tap').addEventListener('click', tapTempo);
+$('#btn-tap-clear').addEventListener('click', () => { ambient.clearTempo(); taps = []; updateVizChip.done = false; updateVizChip(); toast('Beat clock cleared.'); });
 
 /* ------------------------------------------------------------------ */
 /* Stage controls                                                      */
@@ -651,7 +693,7 @@ dlg.addEventListener('change', e => {
   if (t.id === 'set-trigger') settings.set('autoMorphTrigger', t.value);
   if (t.id === 'set-viz') {
     settings.set('vizInput', t.value);
-    if (t.value === 'mic' && !analyser.micEnabled) $('#mic-toggle').click();
+    if (t.value === 'mic' && !analyser.externalKind) $('#mic-toggle').click();
   }
   if (t.id === 'set-client') {
     const v = t.value.trim();
@@ -699,6 +741,7 @@ document.addEventListener('keydown', e => {
     case '[': themeManager.apply(neighbourTheme(themeManager.current.id, -1).id); break;
     case ']': themeManager.apply(neighbourTheme(themeManager.current.id, 1).id); break;
     case 'v': case 'V': togglePauseVisuals(); break;
+    case 't': case 'T': tapTempo(); break;
     default: break;
   }
 });

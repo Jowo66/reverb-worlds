@@ -49,8 +49,10 @@ export class SpotifyEmbedProvider extends EventTarget {
     this.capabilities = { ...NONE };
   }
 
-  async activate() { this.surface.hidden = !this.entity; this._emit(); }
-  async deactivate() { try { this.controller?.pause(); } catch {} this.surface.hidden = true; }
+  /** The embed sits inside the player bar; the bar switches layout while it is shown. */
+  _show(on) { this.surface.hidden = !on; this.surface.closest('.player')?.classList.toggle('player--embed', on); }
+  async activate() { this._show(!!this.entity); this._emit(); }
+  async deactivate() { try { this.controller?.pause(); } catch {} this._show(false); }
 
   async load(input) {
     const ent = parseSpotify(input);
@@ -59,8 +61,8 @@ export class SpotifyEmbedProvider extends EventTarget {
     this._set('loading', 'Loading Spotify embed…');
     try {
       const api = await loadIframeApi();
-      this.surface.hidden = false;
-      const height = ent.type === 'track' || ent.type === 'episode' ? 152 : 352;
+      this._show(true);
+      const height = 80; // Spotify's compact player — fits in the bar for every content type
       if (!this.controller) {
         const mount = document.createElement('div');
         this.surface.querySelector('.embed-mount').replaceChildren(mount);

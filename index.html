@@ -82,6 +82,8 @@
         <button class="btn btn-accent" type="button" id="btn-morph"><svg class="icon"><use href="#i-morph"/></svg><span>Morph</span></button>
         <button class="btn toggle" type="button" id="btn-automorph" aria-pressed="true"><span class="toggle-dot" aria-hidden="true"></span><span>Auto-morph</span></button>
         <button class="btn toggle" type="button" id="btn-autoworld" aria-pressed="false"><span class="toggle-dot" aria-hidden="true"></span><span>Auto-world</span></button>
+        <button class="btn" type="button" id="btn-tap" title="Tap along to the beat (or press T) to lock pulses to the music"><span aria-hidden="true">♩</span><span>Tap tempo</span></button>
+        <button class="btn btn-ghost" type="button" id="btn-tap-clear" hidden aria-label="Clear tapped tempo">✕</button>
         <button class="btn toggle" type="button" id="btn-pausefx" aria-pressed="false"><svg class="icon"><use href="#i-eye"/></svg><span>Pause visuals</span></button>
       </div>
     </section>
@@ -174,9 +176,12 @@
           </form>
         </section>
         <section class="source" aria-labelledby="src-mic">
-          <h3 id="src-mic">Microphone <span class="badge">Audio-reactive</span></h3>
-          <p>Let the hologram listen to the room, for example while Spotify plays on your speakers. Audio is analysed locally and never recorded or sent anywhere.</p>
-          <button class="btn" type="button" id="mic-toggle" aria-pressed="false">Enable microphone</button>
+          <h3 id="src-mic">Live audio for Spotify <span class="badge">Audio-reactive</span></h3>
+          <p>Spotify’s audio is protected, so the page can’t hear it directly. To make the hologram follow the music, let it listen: capture this tab’s audio (Chrome/Edge — choose “This tab” and keep “Share tab audio” on), or use the microphone while music plays on speakers. Analysed locally; never recorded or sent. No permission? Use <strong>Tap tempo</strong> under the hologram.</p>
+          <div class="sdk-actions">
+            <button class="btn" type="button" id="tab-toggle" aria-pressed="false">Capture this tab’s audio</button>
+            <button class="btn" type="button" id="mic-toggle" aria-pressed="false">Use microphone</button>
+          </div>
         </section>
       </div>
     </aside>
@@ -190,11 +195,6 @@
     </section>
   </main>
 
-  <div class="provider-surface panel" id="spotify-surface" hidden>
-    <div class="surface-head"><span class="section-label">Spotify embed</span><span class="surface-note">Playback controls inside the embed are Spotify’s own.</span></div>
-    <div class="embed-mount"></div>
-  </div>
-
   <footer class="player panel" id="player" aria-label="Player">
     <div class="player-track">
       <div class="player-art" id="pl-art" aria-hidden="true"></div>
@@ -203,6 +203,8 @@
         <p class="player-artist" id="pl-artist"></p>
       </div>
     </div>
+    <!-- Spotify's compact embed lives inside the bar (replaces REVERB's transport while active) -->
+    <div class="player-embed" id="spotify-surface" hidden><div class="embed-mount"></div></div>
     <div class="player-center">
       <div class="player-buttons">
         <button class="btn btn-icon btn-flat" type="button" id="pl-shuffle" aria-label="Shuffle" aria-pressed="false" hidden><svg class="icon"><use href="#i-shuffle"/></svg></button>
@@ -282,6 +284,7 @@
           <dt><kbd>M</kbd></dt><dd>Morph hologram</dd>
           <dt><kbd>[</kbd> <kbd>]</kbd></dt><dd>Previous / next world</dd>
           <dt><kbd>V</kbd></dt><dd>Pause / resume visuals</dd>
+          <dt><kbd>T</kbd></dt><dd>Tap tempo (tap 4+ times on the beat)</dd>
           <dt>Drag / <kbd>↑↓←→</kbd></dt><dd>Rotate the hologram (arrow keys when it has focus; <kbd>Home</kbd> resets)</dd>
         </dl>
       </fieldset>

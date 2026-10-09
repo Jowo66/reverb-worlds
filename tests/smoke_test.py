@@ -27,7 +27,7 @@ def contrast(a, b):
     la, lb = sorted((luminance(a), luminance(b)), reverse=True); return (la + 0.05) / (lb + 0.05)
 
 with sync_playwright() as p:
-    browser = p.chromium.launch(args=["--autoplay-policy=no-user-gesture-required", "--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream", "--enable-unsafe-swiftshader"])
+    browser = p.chromium.launch(args=["--autoplay-policy=no-user-gesture-required", "--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream", "--enable-unsafe-swiftshader", "--auto-accept-this-tab-capture"])
     ctx = browser.new_context(viewport={"width": 1440, "height": 900})
     page = ctx.new_page()
     errors, failed = [], []
@@ -169,6 +169,33 @@ with sync_playwright() as p:
     page.keyboard.press("Space"); time.sleep(0.3)
     check("space toggles playback", page.evaluate("window.__reverb.player.state.playing") is False)
     page.keyboard.press("Space"); time.sleep(0.5)
+
+    # --- tap tempo: 4+ taps at 120 BPM → beat-locked pulses (when no analysable audio)
+    page.evaluate("window.__reverb.settings.set('vizInput','ambient')")
+    page.focus("#main")
+    for _ in range(6): page.keyboard.press("t"); page.wait_for_timeout(500)
+    chip = page.inner_text("#viz-mode")
+    check("tap tempo locks a beat clock (taps ~every 500 ms)", "Beat clock" in chip and any(f"{b} BPM" in chip for b in range(105, 131)), chip)
+    # Beat accuracy, measured against a simulated 60 fps clock (the headless test machine's real frames are too irregular to judge timing)
+    kicks = page.evaluate("""(async () => { const { AmbientSource } = await import('./js/audio-analyser.js');
+      const a = new AmbientSource(); const real = performance.now.bind(performance); let T = 10000; performance.now = () => T;
+      try { a.setTempo(120, 10000); const out = []; for (T = 10000; T < 14000; T += 1000 / 60) { const f = a.read(1 / 60); if (f.kick) out.push([T, f.snare]); } return out; } finally { performance.now = real; } })()""")
+    gaps = [kicks[k][0] - kicks[k-1][0] for k in range(1, len(kicks))]
+    check("beat clock: kicks exactly every beat at 120 BPM (±1 frame), snare on 2 & 4", len(kicks) >= 7 and all(abs(g - 500) <= 17 for g in gaps) and [k[1] for k in kicks[:4]] in ([False, True, False, True], [True, False, True, False]), [round(g) for g in gaps])
+    page.click("#btn-tap-clear")
+    check("clear tapped tempo", "Beat clock" not in page.inner_text("#viz-mode"))
+    page.evaluate("window.__reverb.settings.set('vizInput','auto')")
+
+    # --- tab audio capture (Chromium auto-accepts in tests); REVERB audio playing in this tab
+    page.click("#tab-sources")
+    page.click("#tab-toggle"); page.wait_for_timeout(2500)
+    chip = page.inner_text("#viz-mode")
+    if "Tab audio" in chip:
+        check("tab audio capture engages (chip + analyser source)", page.evaluate("window.__reverb.analyser.externalKind") == "tab", f"{chip}; raw level {page.evaluate('window.__reverb.analyser.rawLevel()'):.4f} (headless has no audio output)")
+        page.click("#tab-toggle"); page.wait_for_timeout(300)
+        check("tab capture stops cleanly", "Tab audio" not in page.inner_text("#viz-mode"))
+    else:
+        check("tab capture unavailable in this headless browser → clear message, no crash", page.evaluate("window.__reverb.analyser.externalKind") is None, chip)
 
     # --- microphone (fake device)
     page.click("#tab-sources")

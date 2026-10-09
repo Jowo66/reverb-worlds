@@ -28,6 +28,14 @@ There are no build step, frameworks or image assets. Everything is plain HTML/CS
 | **Spotify Embed** (official iFrame API) | ✅ code complete, but **not verified live** (see below) |
 | **Spotify Web Playback SDK** (Premium) with PKCE login | ⚙️ **needs your configuration** |
 
+### Syncing the hologram to Spotify
+Spotify's audio is DRM-protected and its tempo/beat-analysis API is no longer available to new apps, so the page can't hear Spotify directly. Three options, all labelled honestly on the stage chip:
+- **Tap tempo** (button under the hologram, or press `T` 4+ times on the beat): pulses lock exactly to the tapped BPM. Labelled “Beat clock · N BPM (tapped)”.
+- **Capture this tab's audio** (Library › Sources › Live audio; Chrome/Edge): real analysis if the browser delivers the audio. If the capture is silent (protected audio), REVERB detects it and says so.
+- **Microphone**: real analysis of what your speakers play.
+
+The Spotify embed is docked inside the player bar as Spotify's compact 80 px player, so it never covers the page.
+
 ### Honest visualizer modes
 The chip at the top-left of the stage always says what drives the hologram:
 

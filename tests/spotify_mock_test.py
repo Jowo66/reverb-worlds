@@ -7,7 +7,7 @@ NOT prove real Spotify accepts your app — that needs your Client ID + Premium.
 
     python3 reverb-worlds/tests/spotify_mock_test.py http://127.0.0.1:8765/reverb-worlds/
 """
-import json, sys, time
+import json, os, sys, time
 from urllib.parse import urlparse, parse_qs
 from playwright.sync_api import sync_playwright
 
@@ -209,8 +209,11 @@ with sync_playwright() as p:
     e.click("#embed-form button[type=submit]")
     e.wait_for_function("window.__reverb.player.state.status === 'ready'", timeout=10000)
     check("embed: iframe mounted & surface visible", e.is_visible("#spotify-surface") and e.evaluate("!!document.querySelector('#spotify-surface iframe')"))
+    dock = e.evaluate("""(() => { const s = document.querySelector('#spotify-surface'); const bar = document.querySelector('#player'); const f = s.querySelector('iframe'); return { inBar: bar.contains(s), barEmbed: bar.classList.contains('player--embed'), centerHidden: getComputedStyle(bar.querySelector('.player-center')).display === 'none', h: Math.round(f.getBoundingClientRect().height), barBottom: Math.round(bar.getBoundingClientRect().bottom), vh: innerHeight }; })()""")
+    check("embed docked inside the player bar (compact 80px, no floating panel)", dock["inBar"] and dock["barEmbed"] and dock["centerHidden"] and dock["h"] == 80 and dock["barBottom"] <= dock["vh"], dock)
+    if os.environ.get("SHOT_DIR"): e.screenshot(path=os.environ["SHOT_DIR"] + "/embed-docked.png")
     check("embed: title from oEmbed", e.inner_text("#pl-title") == "Mock Playlist", e.inner_text("#pl-title"))
-    e.click("#pl-play"); time.sleep(0.2)
+    e.evaluate("window.__reverb.player.toggle()"); time.sleep(0.2)
     est = e.evaluate("window.__reverb.player.state")
     check("embed: play → controller.resume + progress", "resume" in e.evaluate("window.__embedCalls") and est["playing"] and est["duration"] == 30)
     check("embed: seek disabled for playlists (API seek is for episodes)", e.is_disabled("#pl-seek"))
