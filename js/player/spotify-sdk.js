@@ -116,6 +116,48 @@ export class SpotifySdkProvider extends EventTarget {
     catch (e) { this._set('error', e.message); }
   }
 
+  /**
+   * Search the whole Spotify catalogue. Development-Mode apps (2026) are capped at
+   * limit=10 per type per request, so callers page with `offset`.
+   */
+  async search(q, types = ['track', 'playlist', 'album', 'artist'], offset = 0) {
+    const params = new URLSearchParams({ q, type: types.join(','), limit: '10', offset: String(offset) });
+    const res = await this._api('GET', `/search?${params}`, undefined, 'search');
+    const j = await res.json();
+    const img = imgs => { const a = (imgs || []).filter(Boolean); return (a.find(i => (i.width || 300) <= 320) || a[a.length - 1] || a[0])?.url || null; };
+    const out = { track: [], playlist: [], album: [], artist: [], more: {} };
+    for (const t of types) {
+      const block = j[`${t}s`];
+      if (!block) continue;
+      out.more[t] = !!block.next;
+      for (const it of block.items || []) {
+        if (!it) continue;
+        if (t === 'track') out.track.push({ type: t, uri: it.uri, url: it.external_urls?.spotify, title: it.name, subtitle: (it.artists || []).map(a => a.name).join(', ') + (it.album?.name ? ` · ${it.album.name}` : ''), image: img(it.album?.images), contextUri: it.album?.uri || null, duration: it.duration_ms });
+        if (t === 'playlist') out.playlist.push({ type: t, uri: it.uri, url: it.external_urls?.spotify, title: it.name, subtitle: `Playlist · ${it.owner?.display_name || 'Spotify'}${(it.items?.total ?? it.tracks?.total) != null ? ` · ${it.items?.total ?? it.tracks?.total} tracks` : ''}`, image: img(it.images) });
+        if (t === 'album') out.album.push({ type: t, uri: it.uri, url: it.external_urls?.spotify, title: it.name, subtitle: `Album · ${(it.artists || []).map(a => a.name).join(', ')}${it.release_date ? ` · ${it.release_date.slice(0, 4)}` : ''}`, image: img(it.images) });
+        if (t === 'artist') out.artist.push({ type: t, uri: it.uri, url: it.external_urls?.spotify, title: it.name, subtitle: 'Artist', image: img(it.images) });
+      }
+    }
+    return out;
+  }
+
+  /** Play a search result. Tracks play inside their album so next/previous keep working. */
+  async playItem(item) {
+    if (!this.deviceId) return this._set('error', 'Connect the Spotify player first.');
+    this.player.activateElement?.();
+    const body = item.type === 'track'
+      ? (item.contextUri ? { context_uri: item.contextUri, offset: { uri: item.uri } } : { uris: [item.uri] })
+      : { context_uri: item.uri };
+    try { await this._api('PUT', `/me/player/play?device_id=${encodeURIComponent(this.deviceId)}`, body); }
+    catch (e) { this._set('error', e.message); throw e; }
+  }
+
+  /** Add a track to the Spotify queue on this device. */
+  async addToQueue(uri) {
+    if (!this.deviceId) throw new Error('Connect the Spotify player first.');
+    await this._api('POST', `/me/player/queue?uri=${encodeURIComponent(uri)}&device_id=${encodeURIComponent(this.deviceId)}`, undefined, 'add to your queue');
+  }
+
   /** The signed-in user's playlists (GET /me/playlists — available to Development-Mode apps in 2026). */
   async fetchPlaylists(max = 500) {
     const out = [];

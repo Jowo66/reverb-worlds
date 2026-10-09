@@ -400,6 +400,7 @@ function updateSdkUi() {
   $('#sdk-logout').hidden = !signedIn;
   $('#sdk-form').hidden = !connected;
   if (typeof updatePlaylistsUi === 'function') updatePlaylistsUi();
+  if (typeof updateSearchUi === 'function') updateSearchUi();
   const note = $('#sdk-note');
   if (!configured) note.textContent = 'Not configured: add your Spotify Client ID in Settings. Requires Spotify Premium and a supported desktop browser.';
   else if (player.active === sdk && sdk.message) note.textContent = sdk.message;
@@ -462,6 +463,91 @@ async function playPlaylist(p) {
   }
 }
 $('#playlists-connect').addEventListener('click', () => sdk.login());
+
+/* ---------------- Spotify catalogue search ---------------- */
+const spSearch = { q: '', type: 'all', results: null, offset: 0, token: 0, current: null };
+const spTypes = () => (spSearch.type === 'all' ? ['track', 'playlist', 'album', 'artist'] : [spSearch.type]);
+function spNote(msg) { $('#sp-search-note').textContent = msg; }
+function updateSearchUi() {
+  const ok = sdk.signedIn;
+  $('#sp-search').disabled = !ok;
+  $('#sp-search-form button').disabled = !ok;
+  if (!ok) { spNote(clientId() ? 'Connect Spotify (below) to search the whole catalogue.' : 'Add your Spotify Client ID in Settings, then connect to search Spotify.'); $('#sp-results').replaceChildren(); }
+  else if (!spSearch.q) spNote('Search any song, playlist, album or artist on Spotify.');
+}
+async function runSpotifySearch(q, { append = false } = {}) {
+  q = (q || '').trim();
+  if (!sdk.signedIn) return updateSearchUi();
+  if (!q) { spSearch.q = ''; spSearch.results = null; $('#sp-results').replaceChildren(); return updateSearchUi(); }
+  const token = ++spSearch.token;
+  if (!append) { spSearch.q = q; spSearch.offset = 0; }
+  spNote(append ? 'Loading more…' : `Searching Spotify for “${q}”…`);
+  try {
+    const r = await sdk.search(q, spTypes(), spSearch.offset);
+    if (token !== spSearch.token) return; // a newer search superseded this one
+    if (append && spSearch.results) { for (const t of ['track', 'playlist', 'album', 'artist']) spSearch.results[t].push(...r[t]); spSearch.results.more = r.more; }
+    else spSearch.results = r;
+    const n = ['track', 'playlist', 'album', 'artist'].reduce((a, t) => a + spSearch.results[t].length, 0);
+    spNote(n ? `${n} results for “${q}”${sdk.deviceId ? '' : ' — playing opens the Spotify embed until the Premium player is connected'}.` : `No results for “${q}”.`);
+    renderSpotifyResults();
+  } catch (err) {
+    if (token === spSearch.token) spNote(`Search failed: ${err.message}`);
+  }
+}
+const LABELS = { track: 'Songs', playlist: 'Playlists', album: 'Albums', artist: 'Artists' };
+function renderSpotifyResults() {
+  const r = spSearch.results, box = $('#sp-results');
+  if (!r) return box.replaceChildren();
+  const groups = spTypes().filter(t => r[t].length).map(t => {
+    const g = document.createElement('div'); g.className = 'sp-group';
+    const h = document.createElement('h4'); h.textContent = LABELS[t];
+    const ul = document.createElement('ul'); ul.className = 'sp-list'; ul.setAttribute('role', 'list');
+    for (const item of r[t]) {
+      const li = document.createElement('li'); li.className = 'sp-item'; li.dataset.type = t;
+      if (spSearch.current === item.uri) li.setAttribute('aria-current', 'true');
+      li.innerHTML = '<span class="sp-cover" aria-hidden="true"></span><button type="button" class="sp-play"><span class="sp-title"></span><span class="sp-sub"></span></button><span class="sp-actions"></span>';
+      const cover = li.querySelector('.sp-cover');
+      if (item.image) cover.style.backgroundImage = `url("${item.image.replace(/"/g, '%22')}")`; else cover.textContent = '♪';
+      li.querySelector('.sp-title').textContent = item.title;
+      li.querySelector('.sp-sub').textContent = item.subtitle;
+      const play = li.querySelector('.sp-play');
+      play.setAttribute('aria-label', `Play ${LABELS[t].slice(0, -1).toLowerCase()} ${item.title}${item.subtitle ? ', ' + item.subtitle : ''}`);
+      play.addEventListener('click', () => playSpotifyItem(item));
+      if (t === 'track') {
+        const q = document.createElement('button'); q.type = 'button'; q.className = 'btn btn-ghost'; q.textContent = '+ Queue';
+        q.setAttribute('aria-label', `Add ${item.title} to the Spotify queue`);
+        q.disabled = !sdk.deviceId; if (!sdk.deviceId) q.title = 'Start the Premium player to use the queue';
+        q.addEventListener('click', async () => { try { await sdk.addToQueue(item.uri); toast(`Added “${item.title}” to your Spotify queue.`); } catch (e) { toast(e.message, 5000); } });
+        li.querySelector('.sp-actions').append(q);
+      }
+      ul.append(li);
+    }
+    g.append(h, ul);
+    return g;
+  });
+  const anyMore = spTypes().some(t => r.more?.[t]);
+  if (anyMore) {
+    const more = document.createElement('button'); more.type = 'button'; more.className = 'btn sp-more'; more.textContent = 'Load more results';
+    more.addEventListener('click', () => { spSearch.offset += 10; runSpotifySearch(spSearch.q, { append: true }); });
+    groups.push(more);
+  }
+  box.replaceChildren(...groups);
+}
+async function playSpotifyItem(item) {
+  analyser.ensureContext();
+  spSearch.current = item.uri; renderSpotifyResults();
+  if (sdk.deviceId) {
+    await player.use('spotify-sdk');
+    try { await sdk.playItem(item); toast(`Playing “${item.title}” on Spotify.`); } catch {}
+  } else {
+    await player.use('spotify-embed');
+    if (await embed.load(item.url || item.uri)) toast(`“${item.title}” loaded in the Spotify embed — press play.`);
+  }
+}
+let spDebounce;
+$('#sp-search').addEventListener('input', e => { clearTimeout(spDebounce); spDebounce = setTimeout(() => runSpotifySearch(e.target.value), 450); });
+$('#sp-search-form').addEventListener('submit', e => { e.preventDefault(); clearTimeout(spDebounce); runSpotifySearch($('#sp-search').value); });
+document.querySelectorAll('input[name="sp-type"]').forEach(r => r.addEventListener('change', () => { spSearch.type = r.value; if (spSearch.q) runSpotifySearch(spSearch.q); }));
 // When Play is pressed with nothing loaded on the Spotify device, show the playlist picker.
 sdk.addEventListener('needs-selection', () => { if (sdk.hasTrack) return; openLibrary(true, 'sources'); $('#src-playlists').scrollIntoView({ block: 'start', behavior: 'smooth' }); if (!playlists.length) loadPlaylists(); });
 $('#playlists-refresh').addEventListener('click', loadPlaylists);
@@ -530,6 +616,7 @@ $('#search-form').addEventListener('submit', e => {
   if (worlds.length === 1) { themeManager.apply(worlds[0].id); toast(`World: ${worlds[0].name}`); return; }
   const tracks = player.state.queue.filter(i => `${i.title} ${i.artist}`.toLowerCase().includes(q));
   if (tracks.length && player.capabilities.queue === 'interactive') { player.playIndex(tracks[0].index); toast(`Playing ${tracks[0].title}`); return; }
+  if (sdk.signedIn) { openLibrary(true, 'sources'); $('#sp-search').value = $('#search').value.trim(); runSpotifySearch($('#sp-search').value); $('#src-search').scrollIntoView({ block: 'start' }); return; }
   toast(worlds.length ? `${worlds.length} worlds match — pick one below.` : 'No worlds or tracks match.');
 });
 

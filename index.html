@@ -113,6 +113,23 @@
         <ol class="queue" id="queue"></ol>
       </div>
       <div role="tabpanel" id="pane-sources" aria-labelledby="tab-sources" class="tabpane" hidden>
+        <section class="source" aria-labelledby="src-search">
+          <h3 id="src-search">Search Spotify</h3>
+          <form class="inline-form" id="sp-search-form" role="search">
+            <label class="visually-hidden" for="sp-search">Search songs, playlists, albums and artists on Spotify</label>
+            <input id="sp-search" type="search" placeholder="Songs, playlists, albums, artists…" autocomplete="off" spellcheck="false">
+            <button class="btn" type="submit">Search</button>
+          </form>
+          <div class="seg sp-types" role="radiogroup" aria-label="Result type">
+            <label><input type="radio" name="sp-type" value="all" checked> All</label>
+            <label><input type="radio" name="sp-type" value="track"> Songs</label>
+            <label><input type="radio" name="sp-type" value="playlist"> Playlists</label>
+            <label><input type="radio" name="sp-type" value="album"> Albums</label>
+            <label><input type="radio" name="sp-type" value="artist"> Artists</label>
+          </div>
+          <p class="pane-note" id="sp-search-note" aria-live="polite">Connect Spotify to search the whole catalogue.</p>
+          <div id="sp-results"></div>
+        </section>
         <section class="source" aria-labelledby="src-playlists">
           <h3 id="src-playlists">Your Spotify playlists</h3>
           <p id="playlists-note">Connect Spotify (below) to pick from your playlists here.</p>

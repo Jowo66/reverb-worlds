@@ -61,6 +61,15 @@ with sync_playwright() as p:
         route.fulfill(status=200, content_type="application/json", body=json.dumps({"access_token": "tok-1", "refresh_token": "ref-1", "expires_in": 3600, "scope": "streaming"}))
     def api(route):
         seen["api"].append((route.request.method, route.request.url, route.request.post_data))
+        if route.request.method == "GET" and "/v1/search" in route.request.url:
+            q = parse_qs(urlparse(route.request.url).query)
+            types = q["type"][0].split(","); off = int(q.get("offset", ["0"])[0])
+            body = {}
+            if "track" in types: body["tracks"] = {"items": [{"name": f"Blinding Song {off+1}", "uri": "spotify:track:0VjIjW4GlUZAMYd2vXMi3b", "external_urls": {"spotify": "https://open.spotify.com/track/0VjIjW4GlUZAMYd2vXMi3b"}, "artists": [{"name": "Some Artist"}], "album": {"name": "Some Album", "uri": "spotify:album:4yP0hdKOZPNshxUOjY0cZj", "images": []}, "duration_ms": 200000}], "next": "x" if off == 0 else None}
+            if "playlist" in types: body["playlists"] = {"items": [None, {"name": "Chill Search Hits", "uri": "spotify:playlist:37i9dQZF1DX4WYpdgoIcn6", "external_urls": {"spotify": "https://open.spotify.com/playlist/37i9dQZF1DX4WYpdgoIcn6"}, "owner": {"display_name": "Spotify"}, "images": [], "items": {"total": 100}}], "next": None}
+            if "album" in types: body["albums"] = {"items": [{"name": "Some Album", "uri": "spotify:album:4yP0hdKOZPNshxUOjY0cZj", "artists": [{"name": "Some Artist"}], "images": [], "release_date": "2020-03-20"}], "next": None}
+            if "artist" in types: body["artists"] = {"items": [{"name": "Some Artist", "uri": "spotify:artist:1Xyo4u8uXC1ZmMpatF05PJ", "images": []}], "next": None}
+            return route.fulfill(status=200, content_type="application/json", body=json.dumps(body))
         if route.request.method == "GET" and "/me/playlists" in route.request.url:
             body = {"items": [
                 {"id": "37i9dQZF1DX0XUsuxWHRQd", "name": "Late Night Drive", "uri": "spotify:playlist:37i9dQZF1DX0XUsuxWHRQd", "external_urls": {"spotify": "https://open.spotify.com/playlist/37i9dQZF1DX0XUsuxWHRQd"}, "images": [{"url": "data:image/gif;base64,R0lGODlhAQABAAAAACw=", "width": 300}], "items": {"total": 42}, "owner": {"display_name": "Jowo"}},
@@ -119,6 +128,35 @@ with sync_playwright() as p:
     wait_until(lambda: any("/me/player/repeat" in u for _, u, _ in seen["api"]) and any("/me/player/shuffle" in u for _, u, _ in seen["api"]), page=pg)
     urls = [u for _, u, _ in seen["api"]]
     check("shuffle & repeat via Web API", any("/me/player/shuffle?state=true" in u for u in urls) and any("/me/player/repeat?state=context" in u for u in urls))
+    # ---- catalogue search
+    pg.click("#tab-sources")
+    pg.fill("#sp-search", "blinding"); pg.press("#sp-search", "Enter")
+    pg.wait_for_function("document.querySelectorAll('#sp-results .sp-item').length >= 4", timeout=8000)
+    groups = pg.evaluate("[...document.querySelectorAll('#sp-results .sp-group h4')].map(h=>h.textContent)")
+    check("search returns songs, playlists, albums, artists (null items skipped)", groups == ["Songs", "Playlists", "Albums", "Artists"], groups)
+    sq = [u for _, u, _ in seen["api"] if "/v1/search" in u][-1]
+    check("search respects 2026 dev-mode limit=10", "limit=10" in sq and "q=blinding" in sq, sq)
+    n0 = len(seen["api"])
+    pg.click("#sp-results .sp-item[data-type=track] .sp-play")
+    wait_until(lambda: any("/me/player/play" in u and "4yP0hdKOZPNshxUOjY0cZj" in (d or "") for _, u, d in seen["api"][n0:]), page=pg)
+    pb = [json.loads(d) for _, u, d in seen["api"][n0:] if "/me/player/play" in u and d]
+    check("clicking a song plays it within its album (next/prev keep working)", pb and pb[-1] == {"context_uri": "spotify:album:4yP0hdKOZPNshxUOjY0cZj", "offset": {"uri": "spotify:track:0VjIjW4GlUZAMYd2vXMi3b"}}, pb[-1:])
+    n0 = len(seen["api"])
+    pg.click("#sp-results .sp-item[data-type=track] .sp-actions .btn")
+    wait_until(lambda: any(m == "POST" and "/me/player/queue?uri=spotify%3Atrack%3A0VjIjW4GlUZAMYd2vXMi3b" in u for m, u, _ in seen["api"][n0:]), page=pg)
+    check("+ Queue adds a song to the Spotify queue", any(m == "POST" and "/me/player/queue" in u for m, u, _ in seen["api"][n0:]))
+    pg.click("#sp-results .sp-more")
+    pg.wait_for_function("document.querySelectorAll('#sp-results .sp-item[data-type=track]').length === 2", timeout=8000)
+    check("Load more pages with offset=10", any("/v1/search" in u and "offset=10" in u for _, u, _ in seen["api"]))
+    pg.check('input[name="sp-type"][value="playlist"]')
+    pg.wait_for_function("document.querySelectorAll('#sp-results .sp-item').length === 1 && document.querySelector('#sp-results .sp-item').dataset.type === 'playlist'", timeout=8000)
+    check("type filter searches playlists only", [u for _, u, _ in seen["api"] if "/v1/search" in u][-1].count("type=playlist&") == 1)
+    n0 = len(seen["api"])
+    pg.click("#sp-results .sp-item[data-type=playlist] .sp-play")
+    wait_until(lambda: any("/me/player/play" in u and "37i9dQZF1DX4WYpdgoIcn6" in (d or "") for _, u, d in seen["api"][n0:]), page=pg)
+    check("clicking a searched playlist plays it", any("/me/player/play" in u and "37i9dQZF1DX4WYpdgoIcn6" in (d or "") for _, u, d in seen["api"][n0:]))
+    pg.check('input[name="sp-type"][value="all"]')
+
     # Play with nothing loaded on the device → resume last context instead of a raw SDK error
     pg.evaluate("window.__reverb.sdk.sdkState = null")
     n0 = len(seen["api"]); pg.click("#pl-play")

@@ -70,6 +70,8 @@ This lets REVERB act as a Spotify Connect device with full transport controls an
    - with the Premium player connected (it starts automatically after login), it plays inside REVERB with full controls;
    - otherwise it opens in the Spotify embed.
 
+   **Search Spotify** (top of Library › Sources) finds any song, playlist, album or artist in the whole catalogue, with filters and **Load more**. Click a result to play it. Songs play inside their album, so next and previous keep working, and **+ Queue** adds a song to your Spotify queue. Pressing Enter in the top search bar also searches Spotify when no world matches. Spotify caps Development-Mode apps at 10 results per type per request; REVERB pages with `offset`.
+
    Pasting a link still works for albums, tracks and other content. Playlists come from `GET /me/playlists` (scopes `playlist-read-private` and `playlist-read-collaborative`), which Spotify's February 2026 migration guide keeps available to Development-Mode apps.
 
 Known caveat: Spotify developers have reported cases where `player.connect()` never becomes ready for Development-Mode apps after the 2026 changes. REVERB shows a clear message after 15 s instead of pretending to be connected.
@@ -108,7 +110,7 @@ python3 -m http.server 8765 --bind 127.0.0.1 &
 python3 reverb-worlds/tests/smoke_test.py http://127.0.0.1:8765/reverb-worlds/ ./shots
 ```
 
-Spotify integrations against **mocked** Spotify endpoints (30 checks: playlist listing and click-to-play, PKCE parameters, token exchange without a secret, SDK device transfer, transport calls, shuffle/repeat API calls, embed controller wiring, invalid-link errors). This proves REVERB's side of the contract, not that Spotify accepts your app:
+Spotify integrations against **mocked** Spotify endpoints (38 checks: catalogue search, play-in-album, add to queue, paging, playlist listing and click-to-play, PKCE parameters, token exchange without a secret, SDK device transfer, transport calls, shuffle/repeat API calls, embed controller wiring, invalid-link errors). This proves REVERB's side of the contract, not that Spotify accepts your app:
 
 ```bash
 python3 reverb-worlds/tests/spotify_mock_test.py http://127.0.0.1:8765/reverb-worlds/
