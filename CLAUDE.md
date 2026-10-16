@@ -86,6 +86,16 @@ Pushing to `main` runs `.github/workflows/pages.yml`. It copies only `index.html
 5. Update counts in tests and the README if needed (the UI counts come from `THEMES.length`).
 6. Run all three suites and screenshot the new world on desktop and mobile.
 
+## Roadmap
+
+The plan for upcoming work is `docs/ROADMAP.md` (v2.0). Rules for working on it:
+- Work **one release at a time, in the order of the roadmap's "Recommended order" table** (v1.1 first). Each release must be shippable on its own: tests green, deployed, reported.
+- Build the **Experience format** (`js/experience.js`) first; Continue Session, Saved Experiences, Share links and Presets all depend on it.
+- Owner decisions: **no community presets / no backend**, and **no visitor analytics, tracking or counters of any kind**. Don't propose them again.
+- Add checks for every new feature to the relevant test suite and update the check counts in this file and the README.
+- Respect the roadmap's budgets: startup JS/CSS ≤ 335 KB raw (lazy-load new features), backdrop ≤ 3 ms/frame, 60 fps target.
+- Flag anything that can't be verified locally (e.g. whether Spotify cover art can be exported to a canvas) instead of assuming.
+
 ## Working style the owner expects
 
 - Make the change, test it, deploy it, then report in plain language: what changed, what was verified, and anything that needs the owner's action (Spotify dashboard, GitHub settings) as exact numbered steps.
