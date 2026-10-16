@@ -19,6 +19,9 @@ export const DEMO_TRACKS = [
   { id: 'paper-tide', title: 'Paper Tide', artist: 'REVERB Originals', album: 'Worlds, Vol. 1', bpm: 78, bars: 20, style: 'ambient', art: ['#1f3a5f', '#b8322a', '#efe5cf'], scale: [62, 64, 66, 69, 71, 74, 76], chords: [[50, 54, 57], [47, 50, 54], [43, 47, 50], [45, 49, 52]] },
 ];
 
+/** Bump when the synth or track definitions change: it keys the persistent audio cache. */
+export const SYNTH_VERSION = 1;
+
 export function trackDuration(def) { return def.bars * 4 * 60 / def.bpm + 2.5; }
 
 /* ------------------------------------------------------------------ */

@@ -13,14 +13,18 @@ import { settings } from './settings.js';
 import { THEMES, getTheme, neighbourTheme } from './theme-registry.js';
 import { themeManager } from './theme-manager.js';
 import { HologramEngine } from './hologram/hologram-engine.js';
-import { Backdrop, renderThumbnail } from './hologram/backdrops.js';
+import { Backdrop, requestThumbnail } from './hologram/backdrops.js';
+import { BUILD } from './version.js';
 import { AudioAnalyser, AmbientSource } from './audio-analyser.js';
-import { PlayerController, formatTime } from './player/player-adapter.js';
+import { PlayerController, formatTime, EMPTY_CAPS, EMPTY_STATE } from './player/player-adapter.js';
 import { MediaProvider } from './player/media-provider.js';
-import { SpotifyEmbedProvider } from './player/spotify-embed.js';
-import { SpotifySdkProvider } from './player/spotify-sdk.js';
-import { handleRedirect, redirectUri } from './player/spotify-common.js';
+import { lazyProvider } from './player/lazy-provider.js';
 import { SPOTIFY_CLIENT_ID } from './config.js';
+// Spotify modules (embed, SDK, PKCE helpers) are NOT imported here: they load on first use.
+
+/** Same formula as spotify-common.js (kept here so Settings can show it without loading Spotify code). */
+const redirectUri = () => location.origin + location.pathname.replace(/index\.html$/, '');
+const hasSpotifySession = () => { try { return !!sessionStorage.getItem('rw:spotify:token'); } catch { return false; } };
 
 const $ = sel => document.querySelector(sel);
 const root = document.documentElement;
@@ -29,9 +33,14 @@ const root = document.documentElement;
 /* Toast                                                               */
 /* ------------------------------------------------------------------ */
 let toastTimer;
-function toast(msg, ms = 3200) {
+function toast(msg, ms = 3200, action = null) {
   const el = $('#toast');
   el.textContent = msg;
+  el.classList.toggle('has-action', !!action);
+  if (action) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'btn btn-accent'; b.textContent = action.label;
+    b.addEventListener('click', action.run); el.append(' ', b);
+  }
   el.classList.add('show');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.classList.remove('show'), ms);
@@ -46,8 +55,23 @@ const analyser = new AudioAnalyser();
 const ambient = new AmbientSource();
 const player = new PlayerController();
 const media = player.register(new MediaProvider(analyser));
-const embed = player.register(new SpotifyEmbedProvider($('#spotify-surface')));
-const sdk = player.register(new SpotifySdkProvider(clientId));
+const noop = () => async () => {};
+const embed = player.register(lazyProvider({
+  id: 'spotify-embed', label: 'Spotify embed',
+  load: () => import('./player/spotify-embed.js').then(m => new m.SpotifyEmbedProvider($('#spotify-surface'))),
+  methods: ['activate', 'load', 'play', 'pause', 'toggle', 'seek', '_onReady'],
+  defaults: { capabilities: EMPTY_CAPS, state: EMPTY_STATE, entity: null, status: 'idle', message: '', deactivate: noop },
+}));
+const sdk = player.register(lazyProvider({
+  id: 'spotify-sdk', label: 'Spotify Premium (Web Playback SDK)',
+  load: () => import('./player/spotify-sdk.js').then(m => new m.SpotifySdkProvider(clientId)),
+  methods: ['activate', 'login', 'logout', 'connect', 'playLink', 'search', 'playItem', 'addToQueue', 'fetchPlaylists', 'play', 'pause', 'toggle', 'next', 'previous', 'seek', 'setVolume', 'setMuted', 'toggleShuffle', 'cycleRepeat'],
+  defaults: {
+    signedIn: () => hasSpotifySession(), configured: () => !!clientId(), deviceId: null, player: null, hasTrack: false, sdkState: null,
+    capabilities: EMPTY_CAPS, state: EMPTY_STATE, status: 'auth-required', message: 'Connect your Spotify Premium account to play here.', deactivate: noop,
+  },
+  events: ['state', 'needs-selection'],
+}));
 
 /* ------------------------------------------------------------------ */
 /* Visualizer input resolution (honest labelling)                      */
@@ -105,7 +129,13 @@ const engine = new HologramEngine($('#hologram'), {
     $('#hologram').setAttribute('aria-label', `Hologram showing: ${label}. Drag, or use the arrow keys, to rotate. Double-click or press Home to reset.`);
     lastMorph = performance.now();
   },
-  onQualityChange: tier => { root.dataset.quality = tier === 'low' ? 'low' : 'normal'; },
+  onQualityChange: tier => { root.dataset.quality = tier === 'low' ? 'low' : 'normal'; if (tier !== 'high') root.dataset.blur = 'off'; },
+  // Auto quality: on sustained slow frames, turn the frosted-glass panel blur off before anything else.
+  onSlow: () => {
+    if (settings.get('quality') !== 'auto' || root.dataset.blur === 'off') return false;
+    root.dataset.blur = 'off';
+    return true;
+  },
   onOnset: kind => { if (kind === 'kick' && vizMode !== 'ambient') onsetCount++; },
 });
 const backdrop = new Backdrop($('#backdrop'), { getReactive: () => engine.reactive });
@@ -113,17 +143,34 @@ const backdrop = new Backdrop($('#backdrop'), { getReactive: () => engine.reacti
 function visualsActive() { return !visualsPaused && settings.get('motion') !== 'static' && !document.hidden; }
 let visualsPaused = false;
 
+/* ---- covered / off-screen throttling ----
+ * Sheets and dialogs that cover the stage cut the hologram to ~8 fps and the
+ * backdrop to 5 fps; when the stage is scrolled out of view the hologram stops. */
+let stageVisible = true;
+function updateCoverage() {
+  const covered = ($('#library-panel').classList.contains('open') && window.matchMedia('(max-width: 1100px)').matches)
+    || $('#player').classList.contains('expanded') || $('#settings').open;
+  engine.setThrottle(covered ? 8 : 0);
+  backdrop.setCovered(covered);
+  root.dataset.covered = covered ? 'true' : 'false';
+}
+try {
+  new IntersectionObserver(([en]) => { stageVisible = en.isIntersecting; syncRunning(); }, { threshold: 0.02 }).observe($('.stage'));
+} catch {}
+
 function applyVisualOptions() {
   const motion = settings.get('motion');
   root.dataset.motion = motion;
   engine.setOptions({ motion, intensity: settings.get('intensity') / 100, glitch: settings.get('glitch') / 100, reduceFlashing: settings.get('reduceFlashing'), quality: settings.get('quality') });
   backdrop.setOptions({ motion: visualsPaused ? 'static' : motion, quality: settings.get('quality') === 'low' ? 'low' : 'high', enabled: settings.get('backdrop'), glitch: settings.get('glitch') / 100 });
   root.dataset.quality = settings.get('quality') === 'low' ? 'low' : 'normal';
+  const q = settings.get('quality');
+  root.dataset.blur = q === 'low' ? 'off' : q === 'high' ? 'on' : (root.dataset.blur || 'on');
   syncRunning();
 }
 
 function syncRunning() {
-  if (visualsActive()) { engine.start(); if (settings.get('backdrop') && settings.get('motion') === 'full') backdrop.start(); else { backdrop.stop(); backdrop.renderOnce(); } }
+  if (visualsActive()) { if (stageVisible) engine.start(); else engine.stop(); if (settings.get('backdrop') && settings.get('motion') === 'full') backdrop.start(); else { backdrop.stop(); backdrop.renderOnce(); } }
   else { engine.stop(); engine.renderOnce(); backdrop.stop(); backdrop.renderOnce(); }
 }
 
@@ -177,8 +224,7 @@ function buildWorldGrid() {
     for (const en of entries) {
       if (!en.isIntersecting) continue;
       const card = en.target; io.unobserve(card);
-      const draw = () => { try { renderThumbnail(getTheme(card.dataset.id), card.querySelector('canvas')); } catch (err) { console.warn('thumbnail', err); } };
-      (window.requestIdleCallback || (f => setTimeout(f, 30)))(draw);
+      requestThumbnail(getTheme(card.dataset.id), card.querySelector('canvas'), BUILD);
     }
   }, { rootMargin: '200px' });
   grid.querySelectorAll('.world-card').forEach(c => io.observe(c));
@@ -308,6 +354,7 @@ ui.seek.addEventListener('change', () => { const dur = player.state.duration || 
 ui.seek.addEventListener('blur', () => { seeking = false; });
 
 $('#pl-expand').addEventListener('click', () => {
+  queueMicrotask(updateCoverage);
   const p = $('#player'), open = !p.classList.contains('expanded');
   p.classList.toggle('expanded', open);
   $('#pl-expand').setAttribute('aria-expanded', String(open));
@@ -335,6 +382,7 @@ if ('mediaSession' in navigator) {
 /* ------------------------------------------------------------------ */
 const sheetMQ = window.matchMedia('(max-width: 1100px)');
 function openLibrary(open, tab) {
+  queueMicrotask(updateCoverage);
   const lib = $('#library-panel');
   if (tab) selectTab(tab);
   if (!sheetMQ.matches) { if (open) lib.querySelector('[aria-selected="true"]').focus(); return; }
@@ -682,8 +730,8 @@ function fillSettings() {
   $('#set-client').placeholder = SPOTIFY_CLIENT_ID ? `Using site default (${SPOTIFY_CLIENT_ID.slice(0, 6)}…)` : '32-character Client ID';
   $('#redirect-uri').textContent = redirectUri();
 }
-$('#nav-settings').addEventListener('click', () => { fillSettings(); dlg.showModal(); });
-dlg.addEventListener('close', () => $('#nav-settings').focus());
+$('#nav-settings').addEventListener('click', () => { fillSettings(); dlg.showModal(); updateCoverage(); });
+dlg.addEventListener('close', () => { $('#nav-settings').focus(); updateCoverage(); });
 dlg.addEventListener('change', e => {
   const t = e.target;
   if (t.name === 'motion') settings.set('motion', t.value);
@@ -752,7 +800,10 @@ window.addEventListener('hashchange', () => { const w = worldFromHash(); if (w) 
 /* ------------------------------------------------------------------ */
 async function boot() {
   // Complete a Spotify PKCE login if we were redirected back from Spotify.
-  const redirect = await handleRedirect(clientId());
+  // Only pull in the PKCE helpers when Spotify has actually redirected back here.
+  const redirect = /[?&](code|error)=/.test(location.search)
+    ? await (await import('./player/spotify-common.js')).handleRedirect(clientId())
+    : { handled: false };
   buildWorldGrid();
   themeManager.apply(worldFromHash() || settings.get('world'), 'init');
   syncToggles();
@@ -768,7 +819,29 @@ async function boot() {
     else { toast('Signed in to Spotify. Loading your playlists…'); loadPlaylists(); await player.use('spotify-sdk'); await sdk.connect(); }
   } else if (sdk.signedIn) loadPlaylists();
   updatePlaylistsUi();
+  registerServiceWorker();
+  // Old synth caches are useless once the synth changes.
+  try { for (const k of await caches.keys()) if (k.startsWith('rw-audio-') && !k.endsWith(`v${(await import('./player/demo-synth.js')).SYNTH_VERSION}`)) caches.delete(k); } catch {}
   // Expose a tiny debug/test surface (no secrets, no playback internals).
   window.__reverb = { engine, backdrop, player, themeManager, settings, analyser, media, embed, sdk };
 }
+/* ---------------- offline cache (sw.js) ----------------
+ * Registered on deployed builds (or locally with ?sw=1). A new deploy waits
+ * in the background; the user chooses when to switch, so one session never
+ * mixes old and new files. */
+function registerServiceWorker() {
+  if (!('serviceWorker' in navigator) || !(BUILD !== 'dev' || /[?&]sw=1\b/.test(location.search))) return;
+  const offer = reg => toast('A new version of REVERB // WORLDS is ready.', 15000, { label: 'Reload', run: () => {
+    navigator.serviceWorker.addEventListener('controllerchange', () => location.reload(), { once: true });
+    reg.waiting?.postMessage('SKIP_WAITING');
+  } });
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    if (reg.waiting && navigator.serviceWorker.controller) offer(reg);
+    reg.addEventListener('updatefound', () => {
+      const w = reg.installing;
+      w?.addEventListener('statechange', () => { if (w.state === 'installed' && navigator.serviceWorker.controller) offer(reg); });
+    });
+  }).catch(err => console.warn('[REVERB] service worker not registered', err));
+}
+
 boot().catch(err => { console.error(err); toast(`Something went wrong while starting: ${err.message}`, 8000); });

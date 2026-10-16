@@ -49,6 +49,13 @@ class ThemeManager extends EventTarget {
     root.dataset.glitchy = theme.a11y?.glitchy ? 'true' : 'false';
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', p.bg);
+    // Per-world fonts (font-loader.js): load this world's, then warm up its neighbours on idle.
+    const F = window.RW_FONTS;
+    if (F) {
+      F.load(theme.id);
+      const i = THEMES.indexOf(theme), idle = f => (window.requestIdleCallback ? requestIdleCallback(f, { timeout: 2500 }) : setTimeout(f, 1500));
+      idle(() => { F.preload(THEMES[(i + 1) % THEMES.length].id); F.preload(THEMES[(i - 1 + THEMES.length) % THEMES.length].id); });
+    }
     const prev = this.current;
     this.current = theme;
     settings.set('world', theme.id);

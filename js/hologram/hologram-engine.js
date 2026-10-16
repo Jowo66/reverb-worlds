@@ -315,8 +315,12 @@ export class HologramEngine {
     }
   }
 
+  /** Cap the frame rate (0 = uncapped). Used while sheets/dialogs cover the stage. */
+  setThrottle(fps) { this.maxFps = fps || 0; this.frameTimes.length = 0; }
+
   _loop(now) {
     if (!this.running) return;
+    if (this.maxFps && now - this.last < 1000 / this.maxFps) { this._raf = requestAnimationFrame(this._loop); return; }
     const dt = Math.min(0.05, (now - this.last) / 1000);
     this.last = now;
     const t0 = performance.now();
@@ -326,11 +330,14 @@ export class HologramEngine {
   }
 
   _trackPerf(cost, dt) {
-    if (this.opts.quality !== 'auto') return;
+    if (this.opts.quality !== 'auto' || this.maxFps) return; // throttled frames say nothing about speed
     this.frameTimes.push(dt * 1000);
     if (this.frameTimes.length < 120) return;
     const avg = this.frameTimes.reduce((a, b) => a + b, 0) / this.frameTimes.length;
     this.frameTimes.length = 0;
+    // Below ~50 fps: first let the page drop cheap-to-lose effects (the panel blur is the usual
+    // culprit on GPU-less machines); only then step the hologram's own detail down.
+    if (avg > 20 && this.hooks.onSlow?.()) return;
     // Under sustained load (< ~40 fps), step quality down. Never step up automatically mid-session.
     if (avg > 25) {
       if (this.qualityTier === 'high') this._setTier('medium');

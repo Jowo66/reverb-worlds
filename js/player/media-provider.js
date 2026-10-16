@@ -9,7 +9,9 @@
  * Supports every control: play/pause, seek, prev/next, volume/mute,
  * shuffle, repeat (off/all/one) and an interactive queue.
  */
-import { DEMO_TRACKS, renderTrack, encodeWAV, makeArtwork, trackDuration } from './demo-synth.js';
+import { DEMO_TRACKS, renderTrack, encodeWAV, makeArtwork, trackDuration, SYNTH_VERSION } from './demo-synth.js';
+
+const AUDIO_CACHE = `rw-audio-v${SYNTH_VERSION}`;
 
 export class MediaProvider extends EventTarget {
   constructor(analyser) {
@@ -101,9 +103,27 @@ export class MediaProvider extends EventTarget {
 
   get current() { return this.pos >= 0 ? this.items[this.order[this.pos]] : null; }
 
+  /**
+   * Synthesised tracks are stored in Cache Storage (per SYNTH_VERSION), so each one
+   * is generated once per device instead of on every visit. Falls back silently
+   * when storage is unavailable (private mode, insecure origin, quota).
+   */
+  async _cachedOrRender(def) {
+    const key = new URL(`__reverb-audio/${def.id}.wav`, location.href).href;
+    let cache = null;
+    try {
+      cache = await caches.open(AUDIO_CACHE);
+      const hit = await cache.match(key);
+      if (hit) { this.cacheHits = (this.cacheHits || 0) + 1; return URL.createObjectURL(await hit.blob()); }
+    } catch { cache = null; }
+    const blob = encodeWAV(await renderTrack(def));
+    if (cache) cache.put(key, new Response(blob, { headers: { 'Content-Type': 'audio/wav' } })).catch(() => {});
+    return URL.createObjectURL(blob);
+  }
+
   async _renderDemo(def) {
     if (!this.renderCache.has(def.id)) {
-      const p = renderTrack(def).then(buf => URL.createObjectURL(encodeWAV(buf)));
+      const p = this._cachedOrRender(def);
       this.renderCache.set(def.id, p);
       p.catch(() => this.renderCache.delete(def.id));
     }

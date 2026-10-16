@@ -12,7 +12,12 @@ import { mulberry32, SIL } from './forms.js';
 const TAU = Math.PI * 2;
 const clamp = (v, a = 0, b = 1) => (v < a ? a : v > b ? b : v);
 
-function layer(w, h) { const c = document.createElement('canvas'); c.width = Math.max(1, w); c.height = Math.max(1, h); return c; }
+// Works on the main thread (DOM canvas) and inside backdrop-worker.js (OffscreenCanvas).
+function layer(w, h) {
+  w = Math.max(1, w); h = Math.max(1, h);
+  if (typeof document === 'undefined') return new OffscreenCanvas(w, h);
+  const c = document.createElement('canvas'); c.width = w; c.height = h; return c;
+}
 function rgba(hex, a) {
   const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/i.exec(hex);
   return m ? `rgba(${parseInt(m[1], 16)},${parseInt(m[2], 16)},${parseInt(m[3], 16)},${a})` : hex;
@@ -759,7 +764,14 @@ export class Backdrop {
     this._loop = this._loop.bind(this);
     this._onResize = () => this._rebuild();
     window.addEventListener('resize', debounce(this._onResize, 150));
+    this.maxFps = 0;      // >0 while the stage is covered by a sheet/dialog (see setCovered)
+    this.seq = 0;
+    this.worker = getWorker();
+    this.worker?.addEventListener('message', e => this._onWorker(e.data));
   }
+
+  /** Run at a trickle while panels cover most of the backdrop. */
+  setCovered(on) { this.maxFps = on ? 5 : 0; }
 
   get animated() { return this.opts.enabled && this.opts.motion === 'full'; }
 
@@ -786,16 +798,41 @@ export class Backdrop {
     if (!this.theme) return;
     const scale = this.opts.quality === 'low' ? 0.55 : Math.min(window.devicePixelRatio || 1, 1.25);
     const w = Math.round(window.innerWidth * scale), h = Math.round(window.innerHeight * scale);
+    const name = this.theme.background.renderer;
+    const seq = ++this.seq;
+    if (this.worker) {
+      // Build the static layers in the worker; keep animating the old world until they arrive.
+      this.pending = { seq, name, w, h, scale };
+      this.worker.postMessage({ type: 'init', seq, renderer: name, w, h, dpr: scale, glitch: this.opts.glitch });
+      return;
+    }
+    this._install(name, w, h, scale, null);
+  }
+
+  _onWorker(msg) {
+    if (msg.type === 'error' && msg.of === 'init' && this.pending?.seq === msg.seq) {
+      console.warn('[REVERB] backdrop worker failed, drawing on the main thread:', msg.message);
+      const p = this.pending; this.pending = null; this._install(p.name, p.w, p.h, p.scale, null);
+      return;
+    }
+    if (msg.type !== 'init' || msg.seq !== this.seq || !this.pending) return; // stale (superseded) result
+    const p = this.pending; this.pending = null;
+    this._install(p.name, p.w, p.h, p.scale, msg.S);
+  }
+
+  _install(name, w, h, scale, prebuilt) {
     this.canvas.width = w; this.canvas.height = h;
-    const R = BACKDROPS[this.theme.background.renderer];
-    this.S = { w, h, dpr: scale, rng: mulberry32(1337), palette: this.theme.palette, glitch: this.opts.glitch, animate: this.animated };
-    R.init(this.S);
+    const R = BACKDROPS[name];
+    const S = prebuilt || { w, h, dpr: scale, rng: mulberry32(1337), glitch: this.opts.glitch };
+    Object.assign(S, { rng: S.rng || mulberry32(1337), palette: this.theme.palette, glitch: this.opts.glitch, animate: this.animated });
+    if (!prebuilt) R.init(S);
+    this.S = S;
     this.renderer = R;
     if (!this.running) this.renderOnce();
   }
 
   renderOnce() {
-    if (!this.S) return;
+    if (!this.S || !this.renderer) return;
     this.S.animate = false;
     this.fade = 0;
     this.renderer.draw(this.ctx, this.S, this.t, 0, { bass: 0, mid: 0, high: 0, energy: 0, kick: 0, snare: 0 });
@@ -811,7 +848,9 @@ export class Backdrop {
   _loop(now) {
     if (!this.running) return;
     this._raf = requestAnimationFrame(this._loop);
-    const fps = (this.theme.background.fps || 24) * (this.opts.quality === 'low' ? 0.6 : 1);
+    if (!this.S || !this.renderer) return;
+    let fps = (this.theme.background.fps || 24) * (this.opts.quality === 'low' ? 0.6 : 1);
+    if (this.maxFps) fps = Math.min(fps, this.maxFps);
     const dt = (now - this.last) / 1000;
     if (dt < 1 / fps) return;
     this.last = now;
@@ -825,6 +864,40 @@ export class Backdrop {
       if (!this.fade) this.prev = null;
     }
   }
+}
+
+/* ---------------- shared worker (null when unsupported → main-thread fallback) ---------------- */
+let sharedWorker;
+function getWorker() {
+  if (sharedWorker !== undefined) return sharedWorker;
+  sharedWorker = null;
+  try {
+    if (typeof OffscreenCanvas !== 'undefined' && new OffscreenCanvas(1, 1).getContext('2d')) {
+      sharedWorker = new Worker(new URL('./backdrop-worker.js', import.meta.url), { type: 'module' });
+      sharedWorker.addEventListener('error', () => { sharedWorker = null; });
+    }
+  } catch { sharedWorker = null; }
+  return sharedWorker;
+}
+
+/**
+ * Thumbnails: drawn (or fetched from the per-build cache) in the worker; the
+ * main thread only blits the returned ImageBitmap. Falls back to drawing here.
+ */
+export function requestThumbnail(theme, canvas, build) {
+  const w = getWorker(), fallback = () => { try { renderThumbnail(theme, canvas); } catch (e) { console.warn('thumbnail', e); } };
+  if (!w) return fallback();
+  const onMsg = ({ data }) => {
+    if (data.id !== theme.id || (data.type !== 'thumb' && data.type !== 'error')) return;
+    w.removeEventListener('message', onMsg);
+    if (data.type === 'error') return fallback();
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(data.bitmap, 0, 0, canvas.width, canvas.height);
+    data.bitmap.close?.();
+    canvas.dataset.thumb = data.cached ? 'cache' : 'worker';
+  };
+  w.addEventListener('message', onMsg);
+  w.postMessage({ type: 'thumb', id: theme.id, renderer: theme.background.renderer, w: canvas.width, h: canvas.height, build });
 }
 
 /** Static procedural thumbnail for a theme card (same renderers, tiny canvas). */

@@ -265,3 +265,5 @@ html[data-motion="static"] *, html[data-motion="reduced"] * { transition-duratio
 .sp-actions { display: flex; gap: 4px; }
 .sp-actions .btn { min-height: 34px; padding: 4px 10px; font-size: 13px; }
 .sp-more { margin-top: 6px; }
+
+.toast.has-action { pointer-events: auto; display: flex; align-items: center; gap: 12px; }

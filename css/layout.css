@@ -43,7 +43,7 @@ body {
 }
 @media (min-width: 900px) {
   .panel { -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
-  html[data-quality="low"] .panel { -webkit-backdrop-filter: none; backdrop-filter: none; }
+  html[data-quality="low"] .panel, html[data-blur="off"] .panel { -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 
 /* ---------------------------------------------------------------- top bar */
@@ -151,3 +151,6 @@ body {
   .library { left: 8px; right: 8px; width: auto; top: auto; bottom: calc(var(--player-h) + 16px); height: 72vh; transform: translateY(calc(100% + 120px)); }
   .player { left: 8px; right: 8px; bottom: 8px; grid-template-columns: 1fr auto auto; padding: 8px 10px; }
   }
+
+/* Without blur, panels get a touch more opaque so text over busy backdrops stays as legible. */
+html[data-blur="off"] .panel { background-color: rgba(var(--surface-rgb), max(var(--surface-alpha), .9)); }

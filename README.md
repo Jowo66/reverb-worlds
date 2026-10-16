@@ -174,6 +174,27 @@ tests/smoke_test.py
 3. Optionally add forms to `js/hologram/forms.js` and ornament to `css/themes.css`.
 
 ## Performance notes
+
+**Optimizations (Oct 2026).** Measured in headless Chromium without a GPU, before → after:
+
+| | Before | After |
+|---|---|---|
+| Font families requested on first load | 27 (render-blocking) | 3 for the active world (not render-blocking); neighbours preloaded on idle |
+| Dark-world frame rate (blurred panels) | 16.7 fps | 60 fps (auto quality turns the panel blur off first) |
+| World switch, main-thread time | 86 ms | 10 ms (backdrop layers built in a worker) |
+| Worst frame gap scrolling to the world grid | 137 ms | 21 ms (thumbnails drawn in a worker, cached per build) |
+| Spotify code at startup | 4 modules | none: loaded on first use |
+| Repeat visit | normal reload | served by the service worker; works offline; synthesised tracks cached |
+
+How each works:
+1. **Per-world fonts:** `js/font-loader.js` (tiny head script) loads only the active world's Google Fonts. `theme-manager.js` loads others on switch and warms the two neighbours' font files on idle.
+2. **Blur fallback:** with Quality = Auto, sustained frames under ~50 fps first set `data-blur="off"` (panels lose `backdrop-filter`, gain opacity). Only then does the hologram reduce its own detail.
+3. **Lazy Spotify:** `js/player/lazy-provider.js` is a stand-in that answers cheap status questions and dynamically imports the embed or SDK (and PKCE helpers) on first real use.
+4. **Worker drawing:** `js/hologram/backdrop-worker.js` builds backdrop layers and world thumbnails on an `OffscreenCanvas`; layers come back as `ImageBitmap`s. Thumbnails are cached in Cache Storage per build. If `OffscreenCanvas` is missing, it falls back to the main thread.
+5. **Covered throttling:** while the Library sheet, expanded mobile player or Settings covers the stage, the hologram runs at 8 fps and the backdrop at 5 fps. The hologram stops while scrolled off-screen.
+6. **Offline cache:** `sw.js` pre-caches every site file per build (the workflow stamps the commit SHA into `sw.js` and `js/version.js`). Files are served cache-first. A new deploy waits until you press **Reload** in the toast, so one session never mixes versions. REVERB Originals are stored in Cache Storage (`rw-audio-v<SYNTH_VERSION>`, about 10 MB per track played) and are synthesised once per device. Locally the service worker is off unless you add `?sw=1`. `tests/optimization_test.py` covers all six (23 checks).
+
+### General notes
 - The canvas device-pixel ratio is capped (2 / 1.5 / 1 by quality tier). Point and particle counts scale by tier.
 - Auto quality steps down under sustained load.
 - Animation stops while the tab is hidden.
