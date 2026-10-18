@@ -16,7 +16,7 @@ cd .. && python3 -m http.server 8765 --bind 127.0.0.1
 python3 reverb-worlds/tests/smoke_test.py        http://127.0.0.1:8765/reverb-worlds/   # 101 checks
 python3 reverb-worlds/tests/spotify_mock_test.py http://127.0.0.1:8765/reverb-worlds/   # 41 checks, simulated Spotify
 python3 reverb-worlds/tests/optimization_test.py http://127.0.0.1:8765/reverb-worlds/   # 23 checks
-python3 reverb-worlds/tests/features_test.py     http://127.0.0.1:8765/reverb-worlds/   # 34 checks (v1.1 features + startup budget)
+python3 reverb-worlds/tests/features_test.py     http://127.0.0.1:8765/reverb-worlds/   # 43 checks (v1.1 + v1.2 share links + startup budget)
 
 # Syntax check one module quickly
 node --check js/app.js
@@ -48,7 +48,7 @@ Pushing to `main` runs `.github/workflows/pages.yml`. It copies only `index.html
 | `js/player/lazy-provider.js` | Stand-in proxy so Spotify modules load on first use |
 | `sw.js` | Offline cache: pre-caches a **hand-maintained list** of every shipped file, cache-first, update via "Reload" toast |
 | `js/experience.js` | The **Experience** format (world, form, view, settings, source, tempo): `validate`, `capture`, `apply`, session storage, favourites. Experiences can only *lower* motion, never raise it |
-| `js/features/*.js` | Lazy feature modules loaded via `loadFeature(name)` in `app.js`: `saved-panel` (Library › Saved, presets, saved list), `info-panel` (I key), `tour` (60-second tour), `spotify-ui` (Spotify search + playlist picker; loads when Sources opens or for signed-in users) |
+| `js/features/*.js` | Lazy feature modules loaded via `loadFeature(name)` in `app.js`: `saved-panel` (Library › Saved, presets, saved list), `info-panel` (I key), `tour` (60-second tour), `share` (share links: encode/decode/open/copy; loaded only when a link is opened or copied), `spotify-ui` (Spotify search + playlist picker; loads when Sources opens or for signed-in users) |
 | `js/app.js` | Wires everything; keyboard shortcuts; `window.__reverb` debug/test surface |
 
 ## Rules (keep these; they came from real decisions or bugs)
@@ -97,7 +97,7 @@ The plan for upcoming work is `docs/ROADMAP.md` (v2.0). Rules for working on it:
 - Owner decisions: **no community presets / no backend**, and **no visitor analytics, tracking or counters of any kind**. Don't propose them again.
 - Add checks for every new feature to the relevant test suite and update the check counts in this file and the README.
 - Respect the roadmap's budgets: startup JS/CSS ≤ 335 KB raw (lazy-load new features), backdrop ≤ 3 ms/frame, 60 fps target. The budget is measured by `features_test.py` from the files on disk that load at startup (JS + CSS, not HTML). After v1.1 it is **334.7 KB, so there is almost no headroom**: new startup code must be offset, and anything not needed for first paint goes into a `js/features/` module.
-- v1.1 (Experience format, Continue Session, Favourites, Saved tab + presets, Info panel, Tour) is **done**. Next is v1.2: World Personalities, Share links (reuse `experience.js` + `validate`), Developer Overlay, Case Study page.
+- v1.1 (Experience format, Continue Session, Favourites, Saved tab + presets, Info panel, Tour) is **done**. v1.2 is in progress: **Share links are done** (readable hash, e.g. `#world=ukiyo&form=moon-disc&i=61&rx=0.30&ry=1.20&src=reverb:tessellate&bpm=104`; every link goes through `validate`, can only lower motion, never autoplays, and wins over the saved session). The compact `#x=<base64url>` form from the roadmap was not built: the readable form already carries every Experience field. Still to do: World Personalities, Developer Overlay, Case Study page. Startup budget after Share links: 332.8 KB (2.4 KB was freed by collapsing banner comments in `app.js`).
 - Each world's original art-direction brief lives in `docs/WORLDS.md` (not loaded at runtime).
 - Flag anything that can't be verified locally (e.g. whether Spotify cover art can be exported to a canvas) instead of assuming.
 

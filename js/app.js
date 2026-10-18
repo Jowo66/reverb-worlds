@@ -30,9 +30,7 @@ const hasSpotifySession = () => { try { return !!sessionStorage.getItem('rw:spot
 const $ = sel => document.querySelector(sel);
 const root = document.documentElement;
 
-/* ------------------------------------------------------------------ */
-/* Toast                                                               */
-/* ------------------------------------------------------------------ */
+/* ---- Toast ---- */
 let toastTimer;
 function toast(msg, ms = 3200, action = null) {
   const el = $('#toast');
@@ -49,9 +47,7 @@ function toast(msg, ms = 3200, action = null) {
 
 const clientId = () => settings.get('spotifyClientId') || SPOTIFY_CLIENT_ID;
 
-/* ------------------------------------------------------------------ */
-/* Audio input + player                                                */
-/* ------------------------------------------------------------------ */
+/* ---- Audio input + player ---- */
 const analyser = new AudioAnalyser();
 const ambient = new AmbientSource();
 const player = new PlayerController();
@@ -74,9 +70,7 @@ const sdk = player.register(lazyProvider({
   events: ['state', 'needs-selection'],
 }));
 
-/* ------------------------------------------------------------------ */
-/* Visualizer input resolution (honest labelling)                      */
-/* ------------------------------------------------------------------ */
+/* ---- Visualizer input resolution (honest labelling) ---- */
 let vizMode = 'ambient';
 function resolveVizMode() {
   const pref = settings.get('vizInput');
@@ -120,9 +114,7 @@ function getFeatures() {
   return analyser.read(now);
 }
 
-/* ------------------------------------------------------------------ */
-/* Hologram + backdrop                                                 */
-/* ------------------------------------------------------------------ */
+/* ---- Hologram + backdrop ---- */
 const engine = new HologramEngine($('#hologram'), {
   getFeatures,
   onForm: ({ label }) => {
@@ -178,9 +170,7 @@ function syncRunning() {
 
 document.addEventListener('visibilitychange', syncRunning);
 
-/* ------------------------------------------------------------------ */
-/* Worlds                                                              */
-/* ------------------------------------------------------------------ */
+/* ---- Worlds ---- */
 function worldFromHash() {
   const m = /world=([a-z]+)/.exec(location.hash);
   return m && THEMES.some(t => t.id === m[1]) ? m[1] : null;
@@ -237,9 +227,7 @@ function buildWorldGrid() {
   grid.querySelectorAll('.world-card').forEach(c => io.observe(c));
 }
 
-/* ------------------------------------------------------------------ */
-/* Auto-morph / auto-world scheduler                                   */
-/* ------------------------------------------------------------------ */
+/* ---- Auto-morph / auto-world scheduler ---- */
 let lastMorph = performance.now(), lastWorld = performance.now();
 setInterval(() => {
   const now = performance.now();
@@ -252,9 +240,7 @@ setInterval(() => {
   }
 }, 250);
 
-/* ------------------------------------------------------------------ */
-/* Player UI                                                           */
-/* ------------------------------------------------------------------ */
+/* ---- Player UI ---- */
 const ui = {
   play: $('#pl-play'), prev: $('#pl-prev'), next: $('#pl-next'), shuffle: $('#pl-shuffle'), repeat: $('#pl-repeat'),
   seek: $('#pl-seek'), elapsed: $('#pl-elapsed'), total: $('#pl-total'), mute: $('#pl-mute'), volume: $('#pl-volume'),
@@ -392,9 +378,7 @@ if ('mediaSession' in navigator) {
   h('seekto', d => player.seek(d.seekTime));
 }
 
-/* ------------------------------------------------------------------ */
-/* Library sheet, tabs and sources                                     */
-/* ------------------------------------------------------------------ */
+/* ---- Library sheet, tabs and sources ---- */
 const sheetMQ = window.matchMedia('(max-width: 1100px)');
 function openLibrary(open, tab) {
   queueMicrotask(updateCoverage);
@@ -618,9 +602,7 @@ function tapTempo() {
 $('#btn-tap').addEventListener('click', tapTempo);
 $('#btn-tap-clear').addEventListener('click', () => { ambient.clearTempo(); taps = []; updateVizChip.done = false; updateVizChip(); toast('Beat clock cleared.'); });
 
-/* ------------------------------------------------------------------ */
-/* Stage controls                                                      */
-/* ------------------------------------------------------------------ */
+/* ---- Stage controls ---- */
 $('#btn-morph').addEventListener('click', () => { engine.morph(); onsetCount = 0; });
 function syncToggles() {
   $('#btn-automorph').setAttribute('aria-pressed', String(settings.get('autoMorph')));
@@ -637,9 +619,7 @@ $('#world-prev').addEventListener('click', () => themeManager.apply(neighbourThe
 $('#world-next').addEventListener('click', () => themeManager.apply(neighbourTheme(themeManager.current.id, 1).id));
 $('#nav-worlds').addEventListener('click', () => { const w = $('#worlds-panel'); w.scrollIntoView({ behavior: settings.get('motion') === 'full' ? 'smooth' : 'auto', block: 'start' }); w.focus({ preventScroll: true }); });
 
-/* ------------------------------------------------------------------ */
-/* Search                                                              */
-/* ------------------------------------------------------------------ */
+/* ---- Search ---- */
 function applySearch() {
   const q = $('#search').value.trim().toLowerCase();
   let shown = 0;
@@ -664,9 +644,7 @@ $('#search-form').addEventListener('submit', e => {
   toast(worlds.length ? `${worlds.length} worlds match — pick one below.` : 'No worlds or tracks match.');
 });
 
-/* ------------------------------------------------------------------ */
-/* Settings dialog                                                     */
-/* ------------------------------------------------------------------ */
+/* ---- Settings dialog ---- */
 const dlg = $('#settings');
 function fillSettings() {
   dlg.querySelectorAll('input[name="motion"]').forEach(r => { r.checked = r.value === settings.get('motion'); });
@@ -721,9 +699,7 @@ try {
   window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', e => settings.set('motion', e.matches ? 'reduced' : 'full'));
 } catch {}
 
-/* ------------------------------------------------------------------ */
-/* Keyboard                                                            */
-/* ------------------------------------------------------------------ */
+/* ---- Keyboard ---- */
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     if (features.tour) features.tour.then(m => m.stop?.('esc'));
@@ -754,24 +730,25 @@ document.addEventListener('keydown', e => {
     default: break;
   }
 });
-window.addEventListener('hashchange', () => { const w = worldFromHash(); if (w) themeManager.apply(w, 'url'); });
+const SHARE_RE = /[#&](form|src|i|rx|bpm)=/;
+window.addEventListener('hashchange', () => { if (SHARE_RE.test(location.hash)) loadFeature('share').then(m => m.open(location.hash)); else { const w = worldFromHash(); if (w) themeManager.apply(w, 'url'); } });
 
-/* ------------------------------------------------------------------ */
-/* Boot                                                                */
-/* ------------------------------------------------------------------ */
+/* ---- Boot ---- */
 async function boot() {
   // Complete a Spotify PKCE login if we were redirected back from Spotify.
   // Only pull in the PKCE helpers when Spotify has actually redirected back here.
   const redirect = /[?&](code|error)=/.test(location.search)
     ? await (await import('./player/spotify-common.js')).handleRedirect(clientId())
     : { handled: false };
+  const shared = SHARE_RE.test(location.hash) && location.hash; // read before the world change rewrites the hash
   buildWorldGrid();
   themeManager.apply(worldFromHash() || settings.get('world'), 'init');
   syncToggles();
   applyVisualOptions();
   media.volume = settings.get('volume'); media.muted = settings.get('muted');
   await player.use('media');
-  restoreSession();
+  if (shared) await loadFeature('share').then(m => m.open(shared)).then(ok => ok || restoreSession(), () => restoreSession()); // a share link wins over the saved session
+  else restoreSession();
   sessionReady = true;
   syncFavUi();
   renderPlayer();

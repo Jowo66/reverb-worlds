@@ -74,6 +74,8 @@ async function useExperience(exp, kind) {
   } else A.toast(`${kind} “${applied.name}” loaded.`, 2500);
 }
 
+const shareLink = exp => A.loadFeature('share').then(m => m.copy(exp));
+
 function row({ name, meta, onApply, applyLabel, actions = [] }) {
   const r = el('li', 'sv-row');
   const b = el('button', 'sv-apply'); b.type = 'button';
@@ -107,6 +109,10 @@ export function render() {
     saved.add(exp); A.toast(`Saved “${name}”.`, 2000); render();
   });
   save.append(el('p', 'sv-empty', 'Saves the world, shape, view angle, visual settings and REVERB track. Stored only in this browser.'), form);
+  const sh = el('button', 'btn btn-ghost', 'Copy share link'); sh.type = 'button'; sh.id = 'sv-share';
+  sh.setAttribute('aria-label', 'Copy a share link for what you’re seeing');
+  sh.addEventListener('click', () => shareLink());
+  save.append(sh);
   frag.append(save);
 
   // Saved experiences
@@ -116,7 +122,7 @@ export function render() {
   else {
     const ul = el('ul', 'sv-list'); ul.setAttribute('role', 'list');
     for (const exp of mine) ul.append(row({ name: exp.name, meta: describe(exp), applyLabel: `Load experience ${exp.name}`, onApply: () => useExperience(exp, 'Experience'),
-      actions: [{ label: 'Delete', aria: `Delete experience ${exp.name}`, run: () => { saved.remove(exp.name); A.toast(`Deleted “${exp.name}”.`, 1800); render(); } }] }));
+      actions: [{ label: 'Link', aria: `Copy share link for ${exp.name}`, run: () => shareLink(exp) }, { label: 'Delete', aria: `Delete experience ${exp.name}`, run: () => { saved.remove(exp.name); A.toast(`Deleted “${exp.name}”.`, 1800); render(); } }] }));
     sec.append(ul);
   }
   frag.append(sec);

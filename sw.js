@@ -26,6 +26,7 @@ const SHELL = [
     'js/experience.js',
     'js/features/info-panel.js',
     'js/features/saved-panel.js',
+    'js/features/share.js',
     'js/features/spotify-ui.js',
     'js/features/tour.js',
     'js/font-loader.js',

@@ -1,6 +1,7 @@
 """
 Release v1.1 checks: Experience format, Continue Last Session, Favourites,
 Saved Experiences + Presets, World Info Panel, Recruiter Tour, startup budget.
+v1.2: Share links.
 
     python3 reverb-worlds/tests/features_test.py http://127.0.0.1:8765/reverb-worlds/
 """
@@ -28,8 +29,8 @@ with sync_playwright() as p:
     local = {u.split("/reverb-worlds/", 1)[1].split("?")[0] for u in reqs if "/reverb-worlds/" in u}
     startup = sum(os.path.getsize(ROOT / f) for f in local if f.endswith((".js", ".css")) and (ROOT / f).is_file())
     check(f"startup JS/CSS within {BUDGET_KB} KB budget", startup / 1024 <= BUDGET_KB, f"{startup / 1024:.1f} KB")
-    lazy = [u for u in reqs if re.search(r"/features/(saved-panel|info-panel|tour)\.js", u)]
-    check("v1.1 feature modules not downloaded at startup", not lazy, lazy)
+    lazy = [u for u in reqs if re.search(r"/features/(saved-panel|info-panel|tour|share)\.js", u)]
+    check("feature modules (incl. share) not downloaded at startup", not lazy, lazy)
 
     # ---- Experience format: validation & accessibility rules
     v = pg.evaluate(f"""(() => {{ const X = {R}.experience; return {{
@@ -137,6 +138,40 @@ with sync_playwright() as p:
     pg.keyboard.press("Escape")
 
     check("no JS errors", not errs, errs[:3])
+
+    # ---- v1.2 Share links (fresh context; the link must win over a saved session)
+    sc = b.new_context(viewport={"width": 1440, "height": 900}, permissions=["clipboard-read", "clipboard-write"])
+    sp = sc.new_page(); serr = []; sp.on("pageerror", lambda e: serr.append(str(e)))
+    sp.goto(BASE + "#world=baroque"); wait(sp, f"{R} && {R}.engine.toForm"); time.sleep(1)
+    sp.evaluate(f"{R}.experience.session.save({R}.experience.validate({{ world: 'baroque', source: {{ type: 'reverb', id: 'neon-rain' }} }}), 30)")
+    rt = sp.evaluate(f"""(async () => {{ const S = await {R}.loadFeature('share'), X = {R}.experience;
+      const exp = X.validate({{ world: 'ukiyo', view: {{ rx: 0.3, ry: 1.2 }}, settings: {{ intensity: 61, glitch: 12, motion: 'reduced', autoMorph: false, autoMorphInterval: 20 }}, source: {{ type: 'reverb', id: 'tessellate' }}, tempo: 104, name: 'Ink & Rain' }});
+      const url = S.encode(exp), back = S.decode(new URL(url).hash);
+      return {{ url, same: JSON.stringify(back) === JSON.stringify(exp) }}; }})()""")
+    check("share link round-trips an Experience exactly", rt["same"], rt["url"])
+    uk_form = sp.evaluate("(async () => (await import('./js/theme-registry.js')).THEME_BY_ID.ukiyo.hologram.forms[2])()")
+    link = f"#world=ukiyo&form={uk_form}&i=61&rx=0.30&ry=1.20&src=reverb:tessellate&bpm=104&name=Ink"
+    sp.evaluate(f"{R}.experience.session.save({R}.experience.validate({{ world: 'baroque', source: {{ type: 'reverb', id: 'neon-rain' }} }}), 30)")
+    sp.close(); sp = sc.new_page(); sp.on("pageerror", lambda e: serr.append(str(e)))
+    sp.goto(BASE + link); wait(sp, f"{R} && {R}.engine.toForm"); time.sleep(1.5)
+    st = sp.evaluate(f"({{ w: {R}.themeManager.current.id, f: {R}.engine.toForm.id, i: {R}.settings.get('intensity'), rx: {R}.engine.user.rx, playing: {R}.player.state.playing, idx: {R}.player.state.index, track: {R}.media.items[{R}.player.state.index]?.id, toast: document.querySelector('#toast').textContent }})")
+    check("opening a share link applies world, form, settings and view", st["w"] == "ukiyo" and st["f"] == uk_form and st["i"] == 61 and abs(st["rx"] - 0.3) < 0.05, st)
+    check("share link cues its REVERB track but never autoplays (Play prompt)", st["track"] == "demo:tessellate" and not st["playing"] and "Play" in st["toast"], st)
+    check("share link wins over the saved session (no Resume prompt)", "Welcome back" not in st["toast"] and st["w"] != "baroque", st["toast"])
+    sp.evaluate(f"{R}.settings.set('motion', 'reduced')")
+    sp.evaluate("location.hash = '#world=aero&form=neon-torus&i=999&m=full&src=javascript:alert(1)&name=%3Cimg%20src%3Dx%20onerror%3Dalert(1)%3E'"); time.sleep(1)
+    bad = sp.evaluate(f"({{ w: {R}.themeManager.current.id, f: {R}.engine.toForm.id, i: {R}.settings.get('intensity'), m: {R}.settings.get('motion'), imgs: document.querySelectorAll('#toast img').length }})")
+    check("hostile link: foreign form, bad numbers and non-Spotify sources dropped", bad["w"] == "aero" and bad["f"] != "neon-torus" and bad["i"] == 61 and bad["imgs"] == 0, bad)
+    check("a share link can never raise motion (m=full ignored)", bad["m"] == "reduced", bad["m"])
+    sp.evaluate("location.hash = '#world=nowhere&form=x&i=5'"); time.sleep(0.8)
+    check("invalid share link changes nothing and says so", sp.evaluate(f"{R}.themeManager.current.id") == "aero" and "valid" in sp.text_content("#toast"))
+    sp.evaluate(f"{R}.settings.set('motion', 'full')")
+    sp.click("#nav-library"); sp.click("#tab-saved")
+    sp.wait_for_selector("#sv-share", timeout=8000); sp.click("#sv-share"); time.sleep(0.5)
+    clip = sp.evaluate("navigator.clipboard.readText()")
+    check("Saved › Copy share link puts a working link on the clipboard", "#world=aero" in clip and "form=" in clip and clip.startswith(BASE.rstrip("/")), clip)
+    check("share links: no JS errors", not serr, serr[:3])
+    sc.close()
 
     # ---- mobile layout still fits
     m = b.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True)
