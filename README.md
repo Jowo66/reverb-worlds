@@ -13,7 +13,7 @@ There are no build step, frameworks or image assets. Everything is plain HTML/CS
 | 14 worlds (Cyberpunk → Glitch Art, plus Frutiger Aero), data-driven in `js/theme-registry.js` | ✅ |
 | World switching that never interrupts playback, seek position or queue | ✅ (tested on all 14) |
 | **v1.1:** Continue Last Session (world, shape, view and the REVERB track cued at the same position, with a Resume prompt) · Favourites (☆ on worlds, shapes and REVERB tracks; keys 1–9) · Library › Saved (save named Experiences; 4 built-in presets) · World Info panel (ⓘ or I) · 60-second tour | ✅ |
-| **v1.2:** Share links: Library › Saved › Copy share link (or Link on a saved experience) copies a readable URL with the world, shape, view, settings and REVERB track. Opening one sets everything up and offers Play; it never autoplays and can only lower motion | ✅ |
+| **v1.2:** Share links: Library › Saved › Copy share link (or Link on a saved experience) copies a readable URL with the world, shape, view, settings and REVERB track. Opening one sets everything up and offers Play; it never autoplays and can only lower motion. Developer Overlay (D or `?debug`): frame rate, backdrop cost vs the 3 ms budget, audio meters, onset ticks (labelled with their source), particles, quality, blur, worker and caches | ✅ |
 | **Grab & rotate** the hologram: drag with mouse or touch (with momentum), arrow keys when focused, double-click or Home to reset | ✅ |
 | Hologram engine: 113 procedural forms, 8 per world (9 for Japanese Scroll); random selection without immediate repeats; manual **Morph**; **Auto-morph** (timer, or every 16 detected onsets); **Auto-world** | ✅ |
 | 14 transition styles (scan-wipe, iris, stroke-redraw, tile-reassemble, brush-reveal, emerge, spray, low-poly scan, slab, lead-assemble, crossfade, focus-pull, pixel-sort, bubble-float) | ✅ |
@@ -126,7 +126,7 @@ Spotify integrations against **mocked** Spotify endpoints (38 checks: catalogue 
 python3 reverb-worlds/tests/spotify_mock_test.py http://127.0.0.1:8765/reverb-worlds/
 ```
 
-`tests/features_test.py` (43 checks) covers the v1.1 features, v1.2 share links and the startup budget.
+`tests/features_test.py` (47 checks) covers the v1.1 features, v1.2 share links and developer overlay, and the startup budget.
 
 The smoke test covers 101 checks:
 - All 14 worlds apply, with playback continuing across every switch, and each has 8+ holograms.

@@ -1,7 +1,7 @@
 """
 Release v1.1 checks: Experience format, Continue Last Session, Favourites,
 Saved Experiences + Presets, World Info Panel, Recruiter Tour, startup budget.
-v1.2: Share links.
+v1.2: Share links, Developer Overlay.
 
     python3 reverb-worlds/tests/features_test.py http://127.0.0.1:8765/reverb-worlds/
 """
@@ -29,7 +29,7 @@ with sync_playwright() as p:
     local = {u.split("/reverb-worlds/", 1)[1].split("?")[0] for u in reqs if "/reverb-worlds/" in u}
     startup = sum(os.path.getsize(ROOT / f) for f in local if f.endswith((".js", ".css")) and (ROOT / f).is_file())
     check(f"startup JS/CSS within {BUDGET_KB} KB budget", startup / 1024 <= BUDGET_KB, f"{startup / 1024:.1f} KB")
-    lazy = [u for u in reqs if re.search(r"/features/(saved-panel|info-panel|tour|share)\.js", u)]
+    lazy = [u for u in reqs if re.search(r"/features/(saved-panel|info-panel|tour|share|dev-overlay)\.js", u)]
     check("feature modules (incl. share) not downloaded at startup", not lazy, lazy)
 
     # ---- Experience format: validation & accessibility rules
@@ -136,6 +136,20 @@ with sync_playwright() as p:
     pg.click("#btn-tour"); time.sleep(0.6 + 5)
     check("with reduced motion, the tour never raises motion", pg.evaluate(f"{R}.settings.get('motion')") == "reduced")
     pg.keyboard.press("Escape")
+
+    # ---- v1.2 Developer Overlay (D key; removes its hooks on close)
+    pg.evaluate("document.activeElement && document.activeElement.blur()")
+    hooks0 = pg.evaluate(f"String({R}.engine.hooks.onOnset)")
+    pg.keyboard.press("d"); pg.wait_for_selector("#dev-overlay", timeout=8000); time.sleep(1.2)
+    dv = pg.text_content("#dev-overlay")
+    check("D opens the Developer Overlay with live fps, backdrop cost, meters, onsets, worker, caches", all(k in dv for k in ["fps", "ms avg", "budget 3 ms", "Bass", "Onsets", "from the ", "Backdrop thread", "Caches", "Build"]), dv[:160])
+    check("overlay measures the backdrop (draw is wrapped while open)", pg.evaluate(f"!!{R}.backdrop.renderer.__devOrig"))
+    pg.keyboard.press("d"); time.sleep(0.3)
+    check("D again closes it and removes every hook", pg.query_selector("#dev-overlay") is None and pg.evaluate(f"!{R}.backdrop.renderer.__devOrig") and pg.evaluate(f"String({R}.engine.hooks.onOnset)") == hooks0)
+    dp = ctx.new_page(); dp.goto(BASE + "?debug#world=glitch"); dp.wait_for_selector("#dev-overlay", timeout=10000)
+    dp.click('#dev-overlay button[aria-label="Close developer overlay"]'); time.sleep(0.2)
+    check("?debug opens the overlay; its ✕ button closes it", dp.query_selector("#dev-overlay") is None)
+    dp.close()
 
     check("no JS errors", not errs, errs[:3])
 

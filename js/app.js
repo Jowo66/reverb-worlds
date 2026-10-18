@@ -722,6 +722,7 @@ document.addEventListener('keydown', e => {
     case 'v': case 'V': togglePauseVisuals(); break;
     case 't': case 'T': tapTempo(); break;
     case 'i': case 'I': loadFeature('info-panel').then(m => m.toggle()); break;
+    case 'd': case 'D': loadFeature('dev-overlay').then(m => m.toggle()); break;
     case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9': {
       const w = X.favouriteWorlds()[Number(e.key) - 1];
       if (w) themeManager.apply(w, 'user'); else if (Number(e.key) === 1) toast('No favourite worlds yet. Press ☆ on a world to add one.', 2500);
@@ -749,6 +750,7 @@ async function boot() {
   await player.use('media');
   if (shared) await loadFeature('share').then(m => m.open(shared)).then(ok => ok || restoreSession(), () => restoreSession()); // a share link wins over the saved session
   else restoreSession();
+  if (/[?&]debug\b/.test(location.search)) loadFeature('dev-overlay').then(m => m.open());
   sessionReady = true;
   syncFavUi();
   renderPlayer();

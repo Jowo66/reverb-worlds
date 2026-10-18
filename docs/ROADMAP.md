@@ -281,7 +281,7 @@ World packages are **data only** and are validated like share links. Imported pa
 | Release | Contents | Why this order |
 |---|---|---|
 | **v1.1 ✅ shipped 18 Oct 2026** | Experience format · Continue Session · Favourites · Info Panel · Recruiter Tour (+ Saved tab & presets) | Retention + portfolio value; mostly UI over existing data |
-| **Next (v1.2)** | World Personalities · ~~Share links~~ (shipped 18 Oct 2026, readable form only) · Developer Overlay · Case Study page | Cheap once the Experience format exists |
+| **Next (v1.2)** | World Personalities · ~~Share links~~ (shipped 18 Oct 2026, readable form only) · ~~Developer Overlay~~ (shipped 18 Oct 2026) · Case Study page | Cheap once the Experience format exists |
 | **v1.3** | Shape Encyclopedia · Discovery + seed variants · Snapshots | Reuses the worker and caches |
 | **v1.4** | Place upgrades + parallax (2–3 worlds at a time) | Highest art effort; do incrementally |
 | **v2.0** | Worlds Kit → World Creator → Import/Export | Platform work, after the format is stable |

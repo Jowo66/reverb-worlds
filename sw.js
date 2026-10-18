@@ -24,6 +24,7 @@ const SHELL = [
     'js/audio-analyser.js',
     'js/config.js',
     'js/experience.js',
+    'js/features/dev-overlay.js',
     'js/features/info-panel.js',
     'js/features/saved-panel.js',
     'js/features/share.js',
