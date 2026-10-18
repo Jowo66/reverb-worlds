@@ -67,14 +67,20 @@
       <div class="world-step">
         <button class="btn btn-icon" type="button" id="world-prev" aria-label="Previous world"><svg class="icon"><use href="#i-left"/></svg></button>
         <button class="btn btn-icon" type="button" id="world-next" aria-label="Next world"><svg class="icon"><use href="#i-right"/></svg></button>
+        <button class="btn btn-icon fav-btn" type="button" id="fav-world" aria-pressed="false" aria-label="Add this world to favourites"><span aria-hidden="true">☆</span></button>
       </div>
+      <button class="btn tour-btn" type="button" id="btn-tour"><span aria-hidden="true">▶</span><span>Take the 60-second tour</span></button>
     </section>
 
     <section class="stage panel" aria-labelledby="stage-title">
       <h2 id="stage-title" class="visually-hidden">Hologram</h2>
       <div class="stage-hud">
         <span class="chip" id="viz-mode" title="Visualizer input">Ambient animation</span>
-        <span class="chip chip-form" id="form-name" aria-live="polite">—</span>
+        <span class="hud-right">
+          <span class="chip chip-form" id="form-name" aria-live="polite">—</span>
+          <button class="btn btn-icon hud-btn fav-btn" type="button" id="fav-form" aria-pressed="false" aria-label="Add this shape to favourites"><span aria-hidden="true">☆</span></button>
+          <button class="btn hud-btn" type="button" id="btn-info" aria-expanded="false" aria-controls="info-panel" title="World information (I)"><span aria-hidden="true">ⓘ</span><span>Info</span></button>
+        </span>
       </div>
       <canvas id="hologram" class="hologram" tabindex="0" role="application" aria-roledescription="rotatable hologram" aria-label="Music-reactive hologram. Drag, or use the arrow keys, to rotate. Double-click or press Home to reset." aria-describedby="rotate-hint"></canvas>
       <p class="rotate-hint" id="rotate-hint">Drag to rotate · double-click to reset</p>
@@ -109,11 +115,13 @@
       <div class="tabs" role="tablist" aria-label="Library views">
         <button role="tab" id="tab-queue" aria-selected="true" aria-controls="pane-queue" class="tab">Queue</button>
         <button role="tab" id="tab-sources" aria-selected="false" aria-controls="pane-sources" class="tab" tabindex="-1">Sources</button>
+        <button role="tab" id="tab-saved" aria-selected="false" aria-controls="pane-saved" class="tab" tabindex="-1">Saved</button>
       </div>
       <div role="tabpanel" id="pane-queue" aria-labelledby="tab-queue" class="tabpane">
         <p class="pane-note" id="queue-note"></p>
         <ol class="queue" id="queue"></ol>
       </div>
+      <div role="tabpanel" id="pane-saved" aria-labelledby="tab-saved" class="tabpane" hidden><p class="pane-note">Loading…</p></div>
       <div role="tabpanel" id="pane-sources" aria-labelledby="tab-sources" class="tabpane" hidden>
         <section class="source" aria-labelledby="src-search">
           <h3 id="src-search">Search Spotify</h3>
@@ -285,6 +293,8 @@
           <dt><kbd>[</kbd> <kbd>]</kbd></dt><dd>Previous / next world</dd>
           <dt><kbd>V</kbd></dt><dd>Pause / resume visuals</dd>
           <dt><kbd>T</kbd></dt><dd>Tap tempo (tap 4+ times on the beat)</dd>
+          <dt><kbd>I</kbd></dt><dd>World information panel</dd>
+          <dt><kbd>1</kbd>–<kbd>9</kbd></dt><dd>Open favourite worlds</dd>
           <dt>Drag / <kbd>↑↓←→</kbd></dt><dd>Rotate the hologram (arrow keys when it has focus; <kbd>Home</kbd> resets)</dd>
         </dl>
       </fieldset>

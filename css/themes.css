@@ -174,3 +174,10 @@
 [data-theme="aero"] .stage { background: radial-gradient(ellipse at 50% 45%, rgba(255,255,255,.5), rgba(255,255,255,.12) 70%); }
 [data-theme="aero"] .world-card { border-radius: 14px; }
 [data-theme="aero"] .range::-webkit-slider-thumb { background: linear-gradient(180deg, #fff, #cfe9ff); }
+
+/* Sheets must be opaque in every world (Aero's glass gradient made the mobile Library see-through). */
+@media (max-width: 1100px) { [data-theme] .library { background: rgb(var(--surface-rgb)); } }
+/* Fixed bars sit over scrolling content, so Aero's glass gets an opaque version of the same gloss there. */
+[data-theme="aero"] .player, [data-theme="aero"] .topbar { background: linear-gradient(180deg, #ffffff 0%, #f0faff 48%, #def3ff 52%, #f0faff 100%); }
+/* The Info panel replaces the rotate hint while it's open. */
+.stage:has(.info-panel) .rotate-hint { visibility: hidden; }

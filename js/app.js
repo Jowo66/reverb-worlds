@@ -20,6 +20,7 @@ import { PlayerController, formatTime, EMPTY_CAPS, EMPTY_STATE } from './player/
 import { MediaProvider } from './player/media-provider.js';
 import { lazyProvider } from './player/lazy-provider.js';
 import { SPOTIFY_CLIENT_ID } from './config.js';
+import * as X from './experience.js';
 // Spotify modules (embed, SDK, PKCE helpers) are NOT imported here: they load on first use.
 
 /** Same formula as spotify-common.js (kept here so Settings can show it without loading Spotify code). */
@@ -128,6 +129,7 @@ const engine = new HologramEngine($('#hologram'), {
     $('#form-name').textContent = label;
     $('#hologram').setAttribute('aria-label', `Hologram showing: ${label}. Drag, or use the arrow keys, to rotate. Double-click or press Home to reset.`);
     lastMorph = performance.now();
+    if (typeof syncFavUi === 'function') { syncFavUi(); saveSessionSoon(); }
   },
   onQualityChange: tier => { root.dataset.quality = tier === 'low' ? 'low' : 'normal'; if (tier !== 'high') root.dataset.blur = 'off'; },
   // Auto quality: on sustained slow frames, turn the frosted-glass panel blur off before anything else.
@@ -211,12 +213,17 @@ function buildWorldGrid() {
     b.setAttribute('aria-label', `World ${t.num}: ${t.name} — ${t.mood}`);
     const c = document.createElement('canvas'); c.width = 320; c.height = 180; c.setAttribute('aria-hidden', 'true');
     const body = document.createElement('span'); body.className = 'wc-body';
-    body.innerHTML = `<span class="wc-num"><span>${t.num}</span><span class="wc-selected">Selected</span></span><span class="wc-name"></span><span class="wc-mood"></span>`;
+    body.innerHTML = `<span class="wc-num"><span>${t.num} <span class="wc-fav" hidden>★ Favourite</span></span><span class="wc-selected">Selected</span></span><span class="wc-name"></span><span class="wc-mood"></span>`;
     body.querySelector('.wc-name').textContent = t.name;
     body.querySelector('.wc-mood').textContent = t.mood;
     b.append(c, body);
     b.addEventListener('click', () => themeManager.apply(t.id, 'user'));
-    li.append(b); frag.append(li);
+    li.className = 'world-card-wrap';
+    const star = document.createElement('button');
+    star.type = 'button'; star.className = 'btn btn-icon fav-btn'; star.dataset.favWorld = t.id;
+    star.innerHTML = '<span aria-hidden="true">☆</span>';
+    star.addEventListener('click', () => toggleFav('worlds', t.id, t.name));
+    li.append(b, star); frag.append(li);
   }
   grid.append(frag);
   // Draw procedural thumbnails lazily (keeps first paint fast).
@@ -336,6 +343,14 @@ function renderQueue(st, caps) {
     el.querySelector('.q-artist').textContent = item.artist;
     if (filter && !`${item.title} ${item.artist}`.toLowerCase().includes(filter)) li.hidden = true;
     li.append(el);
+    if (player.active?.id === 'media' && /^demo:/.test(item.id || '')) {
+      const id = item.id.slice(5), on = X.favs.has('tracks', id), s = document.createElement('button');
+      s.type = 'button'; s.className = 'btn btn-icon btn-flat fav-btn'; s.setAttribute('aria-pressed', String(on));
+      s.setAttribute('aria-label', on ? `Remove ${item.title} from favourites` : `Add ${item.title} to favourites`);
+      s.innerHTML = `<span aria-hidden="true">${on ? '★' : '☆'}</span>`;
+      s.addEventListener('click', () => toggleFav('tracks', id, item.title));
+      li.append(s);
+    }
     return li;
   }));
 }
@@ -396,18 +411,97 @@ $('#pl-queue').addEventListener('click', () => openLibrary(true, 'queue'));
 $('#library-close').addEventListener('click', () => { openLibrary(false); $('#nav-library').focus(); });
 $('#sheet-backdrop').addEventListener('click', () => openLibrary(false));
 
+const TABS = ['queue', 'sources', 'saved'];
 function selectTab(name) {
-  for (const t of ['queue', 'sources']) {
+  for (const t of TABS) {
     const tab = $(`#tab-${t}`), pane = $(`#pane-${t}`), on = t === name;
     tab.setAttribute('aria-selected', String(on)); tab.tabIndex = on ? 0 : -1; pane.hidden = !on;
   }
+  if (name === 'saved') loadFeature('saved-panel').then(m => m.render()).catch(err => console.warn(err));
+  if (name === 'sources') loadSpotifyUi().catch(err => console.warn(err));
 }
-for (const t of ['queue', 'sources']) {
+for (const t of TABS) {
   $(`#tab-${t}`).addEventListener('click', () => selectTab(t));
   $(`#tab-${t}`).addEventListener('keydown', e => {
-    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { const other = t === 'queue' ? 'sources' : 'queue'; selectTab(other); $(`#tab-${other}`).focus(); e.preventDefault(); }
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+      const other = TABS[(TABS.indexOf(t) + (e.key === 'ArrowRight' ? 1 : TABS.length - 1)) % TABS.length];
+      selectTab(other); $(`#tab-${other}`).focus(); e.preventDefault();
+    }
   });
 }
+
+/* ---------------- v1.1: favourites, experiences, lazy feature modules ---------------- */
+const xctx = () => ({ engine, media, player, settings, themeManager, ambient });
+function toggleFav(kind, id, label) {
+  const on = X.favs.toggle(kind, id);
+  toast(on ? `★ ${label} added to favourites.` : `${label} removed from favourites.`, 1800);
+  syncFavUi();
+  if (kind === 'tracks') renderQueue(player.state, player.capabilities);
+  window.dispatchEvent(new Event('reverb:favs'));
+}
+function setStar(btn, on, label) {
+  btn.setAttribute('aria-pressed', String(on));
+  btn.setAttribute('aria-label', on ? `Remove ${label} from favourites` : `Add ${label} to favourites`);
+  btn.title = on ? 'Favourite' : 'Add to favourites';
+  btn.querySelector('span').textContent = on ? '★' : '☆';
+}
+function syncFavUi() {
+  const f = X.favs.all(), t = themeManager.current, form = engine.toForm;
+  document.querySelectorAll('[data-fav-world]').forEach(b => {
+    const id = b.dataset.favWorld, on = f.worlds.includes(id);
+    setStar(b, on, getTheme(id).name);
+    b.closest('li').querySelector('.wc-fav').hidden = !on;
+  });
+  if (t) setStar($('#fav-world'), f.worlds.includes(t.id), `the ${t.name} world`);
+  if (form) setStar($('#fav-form'), f.forms.includes(form.id), `the ${form.label} shape`);
+}
+$('#fav-world').addEventListener('click', () => toggleFav('worlds', themeManager.current.id, themeManager.current.name));
+$('#fav-form').addEventListener('click', () => { const f = engine.toForm; if (f) toggleFav('forms', f.id, f.label); });
+
+/** Lazy feature modules (Saved panel, Info panel, Tour): downloaded on first use only. */
+const features = {};
+function loadFeature(name) {
+  return (features[name] ||= import(`./features/${name}.js`).then(m => {
+    m.init?.({ $, X, xctx, engine, media, player, settings, themeManager, ambient, analyser, THEMES, getTheme, toast, openLibrary, selectTab, toggleFav, syncFavUi, renderQueue, useMedia: () => player.use('media'), loadFeature, sdk, embed, clientId });
+    return m;
+  }));
+}
+$('#btn-info').addEventListener('click', () => loadFeature('info-panel').then(m => m.toggle()));
+$('#btn-tour').addEventListener('click', () => loadFeature('tour').then(m => m.start()));
+
+/* ---------------- Continue Last Session ----------------
+ * The current Experience (+ track position) is auto-saved; on the next visit
+ * the world, shape and view come back and the track is cued, paused at the
+ * same spot, with a Resume prompt (browsers don't allow autoplay). */
+let sessionTimer = 0, sessionReady = false;
+function saveSessionSoon() {
+  if (!sessionReady) return;
+  clearTimeout(sessionTimer);
+  sessionTimer = setTimeout(() => X.session.save(X.capture(xctx()), player.state.position || 0), 700);
+}
+function restoreSession() {
+  const s = X.session.load();
+  if (!s) return;
+  const { exp } = s;
+  // A deep link (#world=…) wins over the saved world; the rest still restores if it fits.
+  const linked = worldFromHash();
+  if (!linked || linked === exp.world) X.apply(exp, xctx(), { includeSettings: false }); // settings already persist on their own
+  if (exp.source?.type === 'reverb') {
+    const idx = media.items.findIndex(it => it.id === `demo:${exp.source.id}`);
+    if (idx >= 0 && media.cue(idx, s.position)) {
+      const title = media.items[idx].title, at = s.position > 1 ? ` from ${formatTime(s.position)}` : '';
+      toast(`Welcome back. Continue “${title}”${at}?`, 12000, { label: 'Resume', run: () => { analyser.ensureContext(); player.play(); $('#toast').classList.remove('show'); } });
+    }
+  } else if (exp.source?.type === 'spotify') {
+    toast(`Last time you were listening on Spotify${exp.source.title ? ` (“${exp.source.title}”)` : ''}. Pick it up in Library › Sources.`, 8000);
+  }
+}
+themeManager.addEventListener('change', () => { syncFavUi(); saveSessionSoon(); });
+settings.addEventListener('change', saveSessionSoon);
+player.addEventListener('state', () => { if (player.state.index !== saveSessionSoon.lastIndex) { saveSessionSoon.lastIndex = player.state.index; saveSessionSoon(); } });
+setInterval(() => { if (player.state.playing) saveSessionSoon(); }, 5000);
+$('#hologram').addEventListener('pointerup', saveSessionSoon);
+window.addEventListener('pagehide', () => { if (sessionReady) X.session.save(X.capture(xctx()), player.state.position || 0); });
 
 async function useMedia() { if (player.active !== media) await player.use('media'); }
 
@@ -453,8 +547,7 @@ function updateSdkUi() {
   $('#sdk-connect').hidden = !signedIn || connected;
   $('#sdk-logout').hidden = !signedIn;
   $('#sdk-form').hidden = !connected;
-  if (typeof updatePlaylistsUi === 'function') updatePlaylistsUi();
-  if (typeof updateSearchUi === 'function') updateSearchUi();
+  spotifyUi?.updatePlaylistsUi(); spotifyUi?.updateSearchUi();
   const note = $('#sdk-note');
   if (!configured) note.textContent = 'Not configured: add your Spotify Client ID in Settings. Requires Spotify Premium and a supported desktop browser.';
   else if (player.active === sdk && sdk.message) note.textContent = sdk.message;
@@ -463,151 +556,12 @@ function updateSdkUi() {
 }
 $('#sdk-login').addEventListener('click', () => sdk.login());
 
-/* ---------------- Spotify playlist picker ---------------- */
-let playlists = [], currentPlaylist = null, playlistsLoading = false;
-function updatePlaylistsUi() {
-  const configured = !!clientId(), signedIn = sdk.signedIn;
-  $('#playlists-connect').hidden = signedIn;
-  $('#playlists-connect').disabled = !configured;
-  $('#playlists-refresh').hidden = !signedIn;
-  const note = $('#playlists-note');
-  if (!configured) note.textContent = 'Add your Spotify Client ID in Settings, then connect to pick from your playlists.';
-  else if (!signedIn) note.textContent = 'Connect Spotify to pick from your playlists here.';
-  else if (playlistsLoading) note.textContent = 'Loading your playlists…';
-  else if (!playlists.length) note.textContent = note.dataset.error || 'No playlists found on this account.';
-  else note.textContent = sdk.deviceId ? `${playlists.length} playlists — click one to play it here (Spotify Premium player).` : `${playlists.length} playlists — click one to open it in the Spotify embed. Start the Premium player below for full controls.`;
-}
-function renderPlaylists() {
-  const q = ($('#search').value || '').trim().toLowerCase();
-  $('#playlist-grid').replaceChildren(...playlists.filter(p => !q || `${p.name} ${p.owner}`.toLowerCase().includes(q)).map(p => {
-    const li = document.createElement('li');
-    const b = document.createElement('button');
-    b.type = 'button'; b.className = 'pl-card';
-    if (currentPlaylist === p.id) b.setAttribute('aria-current', 'true');
-    b.setAttribute('aria-label', `Play playlist ${p.name}${p.count != null ? `, ${p.count} tracks` : ''}`);
-    b.innerHTML = '<span class="pl-cover" aria-hidden="true"></span><span class="pl-name"></span><span class="pl-meta"></span>';
-    const cover = b.querySelector('.pl-cover');
-    if (p.image) cover.style.backgroundImage = `url("${p.image.replace(/"/g, '%22')}")`; else cover.textContent = '♪';
-    b.querySelector('.pl-name').textContent = p.name;
-    b.querySelector('.pl-meta').textContent = [p.count != null ? `${p.count} tracks` : '', p.owner].filter(Boolean).join(' · ');
-    b.addEventListener('click', () => playPlaylist(p));
-    li.append(b);
-    return li;
-  }));
-  updatePlaylistsUi();
-}
-async function loadPlaylists() {
-  if (!sdk.signedIn || playlistsLoading) return;
-  playlistsLoading = true; $('#playlists-note').dataset.error = ''; updatePlaylistsUi();
-  try { playlists = await sdk.fetchPlaylists(); }
-  catch (err) { playlists = []; $('#playlists-note').dataset.error = `Couldn’t load playlists: ${err.message}`; }
-  playlistsLoading = false;
-  renderPlaylists();
-}
-async function playPlaylist(p) {
-  analyser.ensureContext();
-  currentPlaylist = p.id; renderPlaylists();
-  if (sdk.deviceId || sdk.player) {
-    await player.use('spotify-sdk');
-    await sdk.playLink(p.uri);
-    if (player.state.status !== 'error') toast(`Playing “${p.name}” on Spotify.`);
-  } else {
-    await player.use('spotify-embed');
-    if (await embed.load(p.url)) toast(`“${p.name}” loaded in the Spotify embed — press play.`);
-  }
-}
-$('#playlists-connect').addEventListener('click', () => sdk.login());
-
-/* ---------------- Spotify catalogue search ---------------- */
-const spSearch = { q: '', type: 'all', results: null, offset: 0, token: 0, current: null };
-const spTypes = () => (spSearch.type === 'all' ? ['track', 'playlist', 'album', 'artist'] : [spSearch.type]);
-function spNote(msg) { $('#sp-search-note').textContent = msg; }
-function updateSearchUi() {
-  const ok = sdk.signedIn;
-  $('#sp-search').disabled = !ok;
-  $('#sp-search-form button').disabled = !ok;
-  if (!ok) { spNote(clientId() ? 'Connect Spotify (below) to search the whole catalogue.' : 'Add your Spotify Client ID in Settings, then connect to search Spotify.'); $('#sp-results').replaceChildren(); }
-  else if (!spSearch.q) spNote('Search any song, playlist, album or artist on Spotify.');
-}
-async function runSpotifySearch(q, { append = false } = {}) {
-  q = (q || '').trim();
-  if (!sdk.signedIn) return updateSearchUi();
-  if (!q) { spSearch.q = ''; spSearch.results = null; $('#sp-results').replaceChildren(); return updateSearchUi(); }
-  const token = ++spSearch.token;
-  if (!append) { spSearch.q = q; spSearch.offset = 0; }
-  spNote(append ? 'Loading more…' : `Searching Spotify for “${q}”…`);
-  try {
-    const r = await sdk.search(q, spTypes(), spSearch.offset);
-    if (token !== spSearch.token) return; // a newer search superseded this one
-    if (append && spSearch.results) { for (const t of ['track', 'playlist', 'album', 'artist']) spSearch.results[t].push(...r[t]); spSearch.results.more = r.more; }
-    else spSearch.results = r;
-    const n = ['track', 'playlist', 'album', 'artist'].reduce((a, t) => a + spSearch.results[t].length, 0);
-    spNote(n ? `${n} results for “${q}”${sdk.deviceId ? '' : ' — playing opens the Spotify embed until the Premium player is connected'}.` : `No results for “${q}”.`);
-    renderSpotifyResults();
-  } catch (err) {
-    if (token === spSearch.token) spNote(`Search failed: ${err.message}`);
-  }
-}
-const LABELS = { track: 'Songs', playlist: 'Playlists', album: 'Albums', artist: 'Artists' };
-function renderSpotifyResults() {
-  const r = spSearch.results, box = $('#sp-results');
-  if (!r) return box.replaceChildren();
-  const groups = spTypes().filter(t => r[t].length).map(t => {
-    const g = document.createElement('div'); g.className = 'sp-group';
-    const h = document.createElement('h4'); h.textContent = LABELS[t];
-    const ul = document.createElement('ul'); ul.className = 'sp-list'; ul.setAttribute('role', 'list');
-    for (const item of r[t]) {
-      const li = document.createElement('li'); li.className = 'sp-item'; li.dataset.type = t;
-      if (spSearch.current === item.uri) li.setAttribute('aria-current', 'true');
-      li.innerHTML = '<span class="sp-cover" aria-hidden="true"></span><button type="button" class="sp-play"><span class="sp-title"></span><span class="sp-sub"></span></button><span class="sp-actions"></span>';
-      const cover = li.querySelector('.sp-cover');
-      if (item.image) cover.style.backgroundImage = `url("${item.image.replace(/"/g, '%22')}")`; else cover.textContent = '♪';
-      li.querySelector('.sp-title').textContent = item.title;
-      li.querySelector('.sp-sub').textContent = item.subtitle;
-      const play = li.querySelector('.sp-play');
-      play.setAttribute('aria-label', `Play ${LABELS[t].slice(0, -1).toLowerCase()} ${item.title}${item.subtitle ? ', ' + item.subtitle : ''}`);
-      play.addEventListener('click', () => playSpotifyItem(item));
-      if (t === 'track') {
-        const q = document.createElement('button'); q.type = 'button'; q.className = 'btn btn-ghost'; q.textContent = '+ Queue';
-        q.setAttribute('aria-label', `Add ${item.title} to the Spotify queue`);
-        q.disabled = !sdk.deviceId; if (!sdk.deviceId) q.title = 'Start the Premium player to use the queue';
-        q.addEventListener('click', async () => { try { await sdk.addToQueue(item.uri); toast(`Added “${item.title}” to your Spotify queue.`); } catch (e) { toast(e.message, 5000); } });
-        li.querySelector('.sp-actions').append(q);
-      }
-      ul.append(li);
-    }
-    g.append(h, ul);
-    return g;
-  });
-  const anyMore = spTypes().some(t => r.more?.[t]);
-  if (anyMore) {
-    const more = document.createElement('button'); more.type = 'button'; more.className = 'btn sp-more'; more.textContent = 'Load more results';
-    more.addEventListener('click', () => { spSearch.offset += 10; runSpotifySearch(spSearch.q, { append: true }); });
-    groups.push(more);
-  }
-  box.replaceChildren(...groups);
-}
-async function playSpotifyItem(item) {
-  analyser.ensureContext();
-  spSearch.current = item.uri; renderSpotifyResults();
-  if (sdk.deviceId || sdk.player) {
-    await player.use('spotify-sdk');
-    try { await sdk.playItem(item); toast(`Playing “${item.title}” on Spotify.`); } catch {}
-  } else {
-    await player.use('spotify-embed');
-    if (await embed.load(item.url || item.uri)) toast(`“${item.title}” loaded in the Spotify embed — press play.`);
-  }
-}
-let spDebounce;
-$('#sp-search').addEventListener('input', e => { clearTimeout(spDebounce); spDebounce = setTimeout(() => runSpotifySearch(e.target.value), 450); });
-$('#sp-search-form').addEventListener('submit', e => { e.preventDefault(); clearTimeout(spDebounce); runSpotifySearch($('#sp-search').value); });
-document.querySelectorAll('input[name="sp-type"]').forEach(r => r.addEventListener('change', () => { spSearch.type = r.value; if (spSearch.q) runSpotifySearch(spSearch.q); }));
-// When Play is pressed with nothing loaded on the Spotify device, show the playlist picker.
-sdk.addEventListener('needs-selection', () => { if (sdk.hasTrack) return; openLibrary(true, 'sources'); $('#src-playlists').scrollIntoView({ block: 'start', behavior: 'smooth' }); if (!playlists.length) loadPlaylists(); });
-$('#playlists-refresh').addEventListener('click', loadPlaylists);
-$('#search').addEventListener('input', () => { if (playlists.length) renderPlaylists(); });
+/* ---------------- Spotify search & playlists: lazy (features/spotify-ui.js) ---------------- */
+let spotifyUi = null;
+const loadSpotifyUi = () => loadFeature('spotify-ui').then(m => (spotifyUi = m));
+sdk.addEventListener('needs-selection', () => loadSpotifyUi().then(m => m.onNeedsSelection()));
 $('#sdk-connect').addEventListener('click', async () => { await player.use('spotify-sdk'); await sdk.connect(); });
-$('#sdk-logout').addEventListener('click', async () => { await sdk.logout(); playlists = []; currentPlaylist = null; renderPlaylists(); await player.use('media'); updateSdkUi(); });
+$('#sdk-logout').addEventListener('click', async () => { await sdk.logout(); spotifyUi?.reset(); await player.use('media'); updateSdkUi(); });
 $('#sdk-form').addEventListener('submit', async e => { e.preventDefault(); await player.use('spotify-sdk'); await sdk.playLink($('#sdk-input').value); });
 
 function syncLiveInputUi() {
@@ -706,7 +660,7 @@ $('#search-form').addEventListener('submit', e => {
   if (worlds.length === 1) { themeManager.apply(worlds[0].id); toast(`World: ${worlds[0].name}`); return; }
   const tracks = player.state.queue.filter(i => `${i.title} ${i.artist}`.toLowerCase().includes(q));
   if (tracks.length && player.capabilities.queue === 'interactive') { player.playIndex(tracks[0].index); toast(`Playing ${tracks[0].title}`); return; }
-  if (sdk.signedIn) { openLibrary(true, 'sources'); $('#sp-search').value = $('#search').value.trim(); runSpotifySearch($('#sp-search').value); $('#src-search').scrollIntoView({ block: 'start' }); return; }
+  if (sdk.signedIn) { openLibrary(true, 'sources'); $('#sp-search').value = $('#search').value.trim(); loadSpotifyUi().then(m => m.runSpotifySearch($('#sp-search').value)); $('#src-search').scrollIntoView({ block: 'start' }); return; }
   toast(worlds.length ? `${worlds.length} worlds match — pick one below.` : 'No worlds or tracks match.');
 });
 
@@ -772,6 +726,7 @@ try {
 /* ------------------------------------------------------------------ */
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
+    if (features.tour) features.tour.then(m => m.stop?.('esc'));
     if ($('#library-panel').classList.contains('open')) { openLibrary(false); $('#nav-library').focus(); }
     if ($('#player').classList.contains('expanded')) $('#pl-expand').click();
     return;
@@ -790,6 +745,12 @@ document.addEventListener('keydown', e => {
     case ']': themeManager.apply(neighbourTheme(themeManager.current.id, 1).id); break;
     case 'v': case 'V': togglePauseVisuals(); break;
     case 't': case 'T': tapTempo(); break;
+    case 'i': case 'I': loadFeature('info-panel').then(m => m.toggle()); break;
+    case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9': {
+      const w = X.favouriteWorlds()[Number(e.key) - 1];
+      if (w) themeManager.apply(w, 'user'); else if (Number(e.key) === 1) toast('No favourite worlds yet. Press ☆ on a world to add one.', 2500);
+      break;
+    }
     default: break;
   }
 });
@@ -810,20 +771,22 @@ async function boot() {
   applyVisualOptions();
   media.volume = settings.get('volume'); media.muted = settings.get('muted');
   await player.use('media');
+  restoreSession();
+  sessionReady = true;
+  syncFavUi();
   renderPlayer();
-  // Warm up the first REVERB Original in the background so Play starts quickly.
-  (window.requestIdleCallback || (f => setTimeout(f, 800)))(() => media.prefetch(0));
+  // Warm up the (cued or first) REVERB Original in the background so Play starts quickly.
+  (window.requestIdleCallback || (f => setTimeout(f, 800)))(() => media.prefetch(Math.max(0, media.pos)));
   if (redirect.handled) {
     openLibrary(true, 'sources');
     if (redirect.error) toast(redirect.error, 6000);
-    else { toast('Signed in to Spotify. Loading your playlists…'); loadPlaylists(); await player.use('spotify-sdk'); await sdk.connect(); }
-  } else if (sdk.signedIn) loadPlaylists();
-  updatePlaylistsUi();
+    else { toast('Signed in to Spotify. Loading your playlists…'); loadSpotifyUi().then(m => m.loadPlaylists()); await player.use('spotify-sdk'); await sdk.connect(); }
+  } else if (sdk.signedIn) loadSpotifyUi().then(m => m.loadPlaylists());
   registerServiceWorker();
   // Old synth caches are useless once the synth changes.
   try { for (const k of await caches.keys()) if (k.startsWith('rw-audio-') && !k.endsWith(`v${(await import('./player/demo-synth.js')).SYNTH_VERSION}`)) caches.delete(k); } catch {}
   // Expose a tiny debug/test surface (no secrets, no playback internals).
-  window.__reverb = { engine, backdrop, player, themeManager, settings, analyser, media, embed, sdk };
+  window.__reverb = { engine, backdrop, player, themeManager, settings, analyser, media, embed, sdk, experience: X, loadFeature };
 }
 /* ---------------- offline cache (sw.js) ----------------
  * Registered on deployed builds (or locally with ?sw=1). A new deploy waits

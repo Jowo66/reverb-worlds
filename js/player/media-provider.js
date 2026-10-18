@@ -95,6 +95,21 @@ export class MediaProvider extends EventTarget {
     this._emit();
   }
 
+  /**
+   * Select a track without loading or playing it, remembering where to resume.
+   * Used to restore the last session: the bar shows the track paused at its
+   * old position, and the next Play continues from there.
+   */
+  cue(index, position = 0) {
+    const p = this.order.indexOf(index);
+    if (p < 0) return false;
+    this.pos = p;
+    this.resumeAt = position > 1 ? { id: this.items[index].id, t: position } : null;
+    this.status = 'ready'; this.message = '';
+    this._emit();
+    return true;
+  }
+
   /** Pre-render the demo track at `pos` (no-op for local files) so the next play starts instantly. */
   prefetch(pos = 0) {
     const item = this.items[this.order[pos]];
@@ -135,6 +150,7 @@ export class MediaProvider extends EventTarget {
     const token = ++this.loadToken;
     this.pos = pos;
     const item = this.current;
+    if (this.resumeAt && this.resumeAt.id !== item.id) this.resumeAt = null; // picked a different track: forget the old resume point
     this.status = 'loading';
     this.message = item.kind === 'demo' ? `Synthesising “${item.title}”…` : `Loading “${item.title}”…`;
     this.audio.pause();
@@ -144,6 +160,11 @@ export class MediaProvider extends EventTarget {
       if (token !== this.loadToken) return; // superseded by a newer request
       this.audio.src = url;
       this.audio.currentTime = 0;
+      // Resume a cued position (Continue Session) once the file's duration is known.
+      if (this.resumeAt && this.resumeAt.id === item.id) {
+        const t = this.resumeAt.t; this.resumeAt = null;
+        this.audio.addEventListener('loadedmetadata', () => { this.audio.currentTime = Math.min(t, Math.max(0, this.audio.duration - 1)); }, { once: true });
+      }
       this.status = 'ready'; this.message = '';
       this._emit();
       if (autoplay) await this._startPlayback();
@@ -236,7 +257,7 @@ export class MediaProvider extends EventTarget {
     return {
       status: this.status, message: this.message,
       track: cur ? { title: cur.title, artist: cur.artist, album: cur.album, artwork: cur.artwork, kind: cur.kind } : null,
-      position: a.src ? a.currentTime : 0, duration, volume: this.volume, muted: this.muted,
+      position: a.src ? a.currentTime : (this.resumeAt && this.resumeAt.id === cur?.id ? this.resumeAt.t : 0), duration, volume: this.volume, muted: this.muted,
       shuffle: this.shuffle, repeat: this.repeat,
       queue: this.items.map((it, i) => ({ id: it.id, title: it.title, artist: it.artist, current: i === this.order[this.pos], index: i })),
       index: this.order[this.pos] ?? -1,

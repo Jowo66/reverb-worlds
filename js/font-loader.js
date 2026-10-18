@@ -38,68 +38,21 @@
     "Zen Kaku Gothic New": "Zen+Kaku+Gothic+New:wght@400;700"
 };
   var WORLDS = {
-    "cyberpunk": [
-        "Orbitron",
-        "Rajdhani",
-        "Share Tech Mono"
-    ],
-    "artdeco": [
-        "Josefin Sans",
-        "Poiret One"
-    ],
-    "cave": [
-        "Amatic SC",
-        "Nunito Sans"
-    ],
-    "mosaic": [
-        "Cormorant Garamond",
-        "Nunito Sans"
-    ],
-    "ukiyo": [
-        "Shippori Mincho",
-        "Zen Kaku Gothic New"
-    ],
-    "baroque": [
-        "EB Garamond",
-        "Playfair Display"
-    ],
-    "street": [
-        "Archivo",
-        "Permanent Marker"
-    ],
-    "vapor": [
-        "Audiowide",
-        "Space Grotesk",
-        "VT323"
-    ],
-    "brutalist": [
-        "Archivo Black",
-        "IBM Plex Mono",
-        "Space Grotesk"
-    ],
-    "stained": [
-        "Cinzel",
-        "Source Sans 3"
-    ],
-    "double": [
-        "Cormorant Garamond",
-        "Jost"
-    ],
-    "tiltshift": [
-        "DM Mono",
-        "DM Sans"
-    ],
-    "glitch": [
-        "JetBrains Mono",
-        "Major Mono Display",
-        "VT323"
-    ],
-    "aero": [
-        "DM Mono",
-        "Nunito Sans",
-        "Varela Round"
-    ]
-};
+    "cyberpunk": ["Orbitron", "Rajdhani", "Share Tech Mono"],
+    "artdeco": ["Josefin Sans", "Poiret One"],
+    "cave": ["Amatic SC", "Nunito Sans"],
+    "mosaic": ["Cormorant Garamond", "Nunito Sans"],
+    "ukiyo": ["Shippori Mincho", "Zen Kaku Gothic New"],
+    "baroque": ["EB Garamond", "Playfair Display"],
+    "street": ["Archivo", "Permanent Marker"],
+    "vapor": ["Audiowide", "Space Grotesk", "VT323"],
+    "brutalist": ["Archivo Black", "IBM Plex Mono", "Space Grotesk"],
+    "stained": ["Cinzel", "Source Sans 3"],
+    "double": ["Cormorant Garamond", "Jost"],
+    "tiltshift": ["DM Mono", "DM Sans"],
+    "glitch": ["JetBrains Mono", "Major Mono Display", "VT323"],
+    "aero": ["DM Mono", "Nunito Sans", "Varela Round"]
+  };
   var loaded = {};
   function href(names) {
     return 'https://fonts.googleapis.com/css2?' + names.map(function (n) { return 'family=' + SPECS[n]; }).join('&') + '&display=swap';
