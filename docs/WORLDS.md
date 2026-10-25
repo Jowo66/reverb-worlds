@@ -1,4 +1,4 @@
-# The 14 worlds: original art direction
+# The 15 worlds: original art direction
 
 The creative brief each world was built from (moved out of `js/theme-registry.js` because it isn't needed at runtime).
 
@@ -18,3 +18,4 @@ The creative brief each world was built from (moved out of `js/theme-registry.js
 | 12 | Tilt Shift (`tiltshift`) | Tilt-shift photography, miniature effect, selective focus band, slightly oversaturated colors, aerial view of city, toy-like appearance |
 | 13 | Glitch Art (`glitch`) | Glitch art, digital corruption effects, RGB channel separation, pixel sorting, data bending aesthetic, neon colors on dark background |
 | 14 | Frutiger Aero (`aero`) | Frutiger Aero: glossy glass and aqua surfaces, skies and clouds, bubbles and water droplets, lush green nature, lens flares and light rays, optimistic mid-2000s clean-tech aesthetic |
+| 15 | Deep Field (`deepfield`) | Pixel-art cosmos: dithered nebulae, spherified pixel planets with banded light (ported from Deep-Fold's MIT "Pixel Planets" shaders), and a hologram of ships and robots traced from CC0 Quaternius models, drawn as hard pixel wireframes. Amber star-glow and teal on deep indigo |

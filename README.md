@@ -1,8 +1,8 @@
 # REVERB // WORLDS
 
-A static, GitHub Pages–ready music player with **14 selectable visual worlds** and a signature **music-reactive hologram**. Every world shares one player and one hologram engine. Each world brings its own art direction, materials, form pool, transition and reactions.
+A static, GitHub Pages–ready music player with **15 selectable visual worlds** and a signature **music-reactive hologram**. Every world shares one player and one hologram engine. Each world brings its own art direction, materials, form pool, transition and reactions.
 
-There are no build step, frameworks or image assets. Everything is plain HTML/CSS and ES modules, and every visual is procedural (Canvas 2D).
+There are no build step, frameworks, or image or audio assets. Everything is plain HTML/CSS and ES modules, and every visual is drawn in code (Canvas 2D). Hologram forms in Deep Field are traced from CC0 models by Quaternius (quaternius.com); its planets port the maths of Deep-Fold's MIT-licensed Pixel Planets shaders.
 
 ---
 
@@ -10,13 +10,14 @@ There are no build step, frameworks or image assets. Everything is plain HTML/CS
 
 | Feature | Status |
 |---|---|
-| 14 worlds (Cyberpunk → Glitch Art, plus Frutiger Aero), data-driven in `js/theme-registry.js` | ✅ |
-| World switching that never interrupts playback, seek position or queue | ✅ (tested on all 14) |
+| 15 worlds (Cyberpunk → Glitch Art, plus Frutiger Aero and Deep Field), data-driven in `js/theme-registry.js` | ✅ |
+| **World packs:** a world can keep its backdrop and forms in `js/worlds/<id>.js`, loaded only when it is first opened (Deep Field does), so new worlds barely touch the startup budget | ✅ |
+| World switching that never interrupts playback, seek position or queue | ✅ (tested on all 15) |
 | **v1.1:** Continue Last Session (world, shape, view and the REVERB track cued at the same position, with a Resume prompt) · Favourites (☆ on worlds, shapes and REVERB tracks; keys 1–9) · Library › Saved (save named Experiences; 4 built-in presets) · World Info panel (ⓘ or I) · 60-second tour | ✅ |
 | **v1.2:** Share links: Library › Saved › Copy share link (or Link on a saved experience) copies a readable URL with the world, shape, view, settings and REVERB track. Opening one sets everything up and offers Play; it never autoplays and can only lower motion. Developer Overlay (D or `?debug`): frame rate, backdrop cost vs the 3 ms budget, audio meters, onset ticks (labelled with their source), particles, quality, blur, worker and caches | ✅ |
 | **Grab & rotate** the hologram: drag with mouse or touch (with momentum), arrow keys when focused, double-click or Home to reset | ✅ |
-| Hologram engine: 113 procedural forms, 8 per world (9 for Japanese Scroll); random selection without immediate repeats; manual **Morph**; **Auto-morph** (timer, or every 16 detected onsets); **Auto-world** | ✅ |
-| 14 transition styles (scan-wipe, iris, stroke-redraw, tile-reassemble, brush-reveal, emerge, spray, low-poly scan, slab, lead-assemble, crossfade, focus-pull, pixel-sort, bubble-float) | ✅ |
+| Hologram engine: 137 forms, 8 per world (9 for Japanese Scroll, 24 for Deep Field: 20 ships and robots traced from 3D models plus 4 procedural); random selection without immediate repeats; manual **Morph**; **Auto-morph** (timer, or every 16 detected onsets); **Auto-world** | ✅ |
+| 15 transition styles (scan-wipe, iris, stroke-redraw, tile-reassemble, brush-reveal, emerge, spray, low-poly scan, slab, lead-assemble, crossfade, focus-pull, pixel-sort, bubble-float, pixel-dissolve) | ✅ |
 | Per-world kick / snare / high-frequency reactions and ambient particles | ✅ |
 | Animated procedural backdrop per world, plus procedural world-card thumbnails | ✅ |
 | **REVERB Originals**: 5 original tracks synthesised in your browser. They are genuinely analysable, so the hologram is truly audio-reactive | ✅ |
@@ -24,7 +25,7 @@ There are no build step, frameworks or image assets. Everything is plain HTML/CS
 | **Microphone** visualizer input (e.g. while Spotify plays on speakers) | ✅ |
 | Full player: play/pause, prev/next, seek, elapsed/total, volume, mute, shuffle, repeat (off/all/one), interactive queue, Media Session (lock-screen keys) | ✅ |
 | Settings: Motion (full / reduced / static), intensity, glitch intensity, reduce flashing, quality (auto/high/low), backdrop on/off, auto-morph trigger and intervals, visualizer input | ✅ |
-| Accessibility: keyboard shortcuts, visible focus, labelled icon buttons, `aria-pressed` toggles with text (not colour-only), `prefers-reduced-motion` default, WCAG AA+ palette contrast for all 14 worlds (checked in tests) | ✅ |
+| Accessibility: keyboard shortcuts, visible focus, labelled icon buttons, `aria-pressed` toggles with text (not colour-only), `prefers-reduced-motion` default, WCAG AA+ palette contrast for all 15 worlds (checked in tests) | ✅ |
 | Responsive: desktop 3-column, tablet with library sheet, mobile one-column with world carousel, compact player and expanded-player sheet | ✅ |
 | Deep links: `…/#world=baroque` | ✅ |
 | **Spotify Embed** (official iFrame API) | ✅ code complete, but **not verified live** (see below) |
@@ -126,10 +127,12 @@ Spotify integrations against **mocked** Spotify endpoints (38 checks: catalogue 
 python3 reverb-worlds/tests/spotify_mock_test.py http://127.0.0.1:8765/reverb-worlds/
 ```
 
-`tests/features_test.py` (47 checks) covers the v1.1 features, v1.2 share links and developer overlay, and the startup budget.
+`tests/features_test.py` (62 checks) covers the v1.1 features, v1.2 share links and developer overlay, the startup budget, and Deep Field (pack loading, failure fallback, cold-start links, pixel look, reduced motion).
 
-The smoke test covers 101 checks:
-- All 14 worlds apply, with playback continuing across every switch, and each has 8+ holograms.
+`tests/test_bake_forms.py` (6 checks, `python -m unittest tests/test_bake_forms.py`) covers the model baking tool.
+
+The smoke test covers 105 checks:
+- All 15 worlds apply, with playback continuing across every switch, and each has 8+ holograms.
 - Drag, arrow-key and double-click hologram rotation.
 - Each world's form comes from its own pool.
 - Morphs never repeat back-to-back.
@@ -140,8 +143,15 @@ The smoke test covers 101 checks:
 - Local audio files (generated WAV upload) driving audio-reactive mode.
 - The Spotify embed fails gracefully with no fake controls.
 - No secrets ship, no local assets are missing, and there are no JS errors.
-- Palette contrast for all 14 worlds.
+- Palette contrast for all 15 worlds.
 - Mobile and tablet layouts have no horizontal scroll.
+
+## Baking hologram forms from 3D models
+`tools/bake_forms.py` (authoring only, never deployed) traces a model's sharp edges into compact polylines and writes `js/worlds/deepfield-baked.js`. The forms to bake are listed in `tools/forms-manifest.json`.
+```bash
+python tools/bake_forms.py --assets "<folder with the models>" --preview bake.png
+```
+Only use models whose licence allows redistribution (the Deep Field forms are CC0).
 
 ## Keyboard
 `Space` play/pause · `←/→` seek 5 s · `N`/`P` next/previous · `M` morph · `[`/`]` previous/next world · `V` pause visuals · `Esc` closes sheets.
@@ -153,14 +163,18 @@ css/  reset · tokens · layout · components · themes (per-world ornament)
 js/
   app.js                    wiring: settings ↔ worlds ↔ hologram ↔ player
   settings.js               harmless prefs in localStorage (fails gracefully)
-  theme-registry.js         the 14 worlds as data
+  theme-registry.js         the 15 worlds as data
+  world-packs.js            lazy loader for pack worlds (js/worlds/<id>.js)
+  worlds/
+    deepfield.js            Deep Field pack: pixel-planet backdrop + forms
+    deepfield-baked.js      generated by tools/bake_forms.py (do not edit)
   theme-manager.js          applies CSS tokens + data-theme (presentation only)
   audio-analyser.js         Web Audio analysis + honest ambient source
   config.js                 optional public Spotify Client ID
   hologram/
-    forms.js                113 procedural forms, resampled for point-to-point morphs
+    forms.js                113 built-in procedural forms, resampled for point-to-point morphs
     hologram-engine.js      the reusable visualizer (materials, transitions, reactions, particles, quality scaling)
-    backdrops.js            14 procedural animated backdrops + thumbnails
+    backdrops.js            14 built-in animated backdrops + thumbnails
   player/
     player-adapter.js       capability-driven controller (UI hides unsupported controls)
     media-provider.js       REVERB player (demo synth + local files)

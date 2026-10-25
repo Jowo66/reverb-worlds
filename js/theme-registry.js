@@ -1,5 +1,5 @@
 /**
- * theme-registry.js — the 14 worlds, defined as data.
+ * theme-registry.js — the 15 worlds, defined as data.
  *
  * Every world shares one player and one hologram engine. A world only
  * describes presentation:
