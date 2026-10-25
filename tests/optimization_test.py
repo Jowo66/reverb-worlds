@@ -17,7 +17,7 @@ def wait(page, js, timeout=15000): page.wait_for_function(js, timeout=timeout)
 # ---- static: the service worker pre-caches every shipped file, and every listed file exists
 sw = (ROOT / "sw.js").read_text()
 listed = set(re.findall(r"^\s+'([^']+)',$", sw, re.M)) - {"./"}
-shipped = {str(p.relative_to(ROOT)) for p in [*ROOT.glob("js/**/*.js"), *ROOT.glob("css/*.css"), *ROOT.glob("assets/**/*.*")]} | {"index.html"}
+shipped = {p.relative_to(ROOT).as_posix() for p in [*ROOT.glob("js/**/*.js"), *ROOT.glob("css/*.css"), *ROOT.glob("assets/**/*.*")]} | {"index.html"}
 check("sw.js pre-caches every shipped file", shipped <= listed, sorted(shipped - listed))
 check("every file sw.js lists exists", all((ROOT / f).exists() for f in listed), [f for f in listed if not (ROOT / f).exists()])
 
