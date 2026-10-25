@@ -35,6 +35,7 @@ function update() {
   const rows = [
     ['World', `${t.name} · ${t.num}/${A.THEMES.length}`],
     ['Forms', `${e.pool.length} · now: ${e.toForm?.label || '—'}`],
+    ...(e.toForm?.credit ? [['Model', `${e.toForm.label} by ${e.toForm.credit}`]] : []),
     ['Morph', `${pretty(e.transitionName)} · ${(t.hologram.motion.morph).toFixed(1)} s`],
     ['Driver', document.querySelector('#viz-mode').textContent],
     ['Particles', `rate ${t.hologram.particles.rate} · ${alive} alive`],

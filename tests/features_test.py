@@ -213,9 +213,11 @@ with sync_playwright() as p:
       const t1 = performance.now(); for (let i = 0; i < 30; i++) m.backdrop.draw(bctx, SB, 3 + i / 24, 1 / 24, r);
       const msBig = (performance.now() - t1) / 30;
       return { n: ids.length, procedural: ['df-ringed-planet', 'df-blackhole', 'df-galaxy', 'df-orbits'].every(k => ids.includes(k)), bad,
-        upright: [F.buildForm('robot-george', 320).upright, F.buildForm('ship-omen', 320).upright], ms, msBig, alpha: px[3] };
+        upright: [F.buildForm('robot-george', 320).upright, F.buildForm('ship-omen', 320).upright], ms, msBig, alpha: px[3],
+        credit: [F.buildForm('robot-voxel-recon-bot', 320).credit, F.buildForm('ship-omen', 320).credit, F.buildForm('df-galaxy', 320).credit] };
     })()""")
-    check("deepfield pack exports 24 forms (20 baked + 4 procedural)", df["n"] == 24 and df["procedural"], df["n"])
+    check("deepfield pack exports 33 forms (29 baked + 4 procedural)", df["n"] == 33 and df["procedural"], df["n"])
+    check("baked forms carry their model credit (procedural ones none)", df["credit"] == ["Max Parata (CC BY-ND 4.0)", "Quaternius (CC0)", None], df["credit"])
     check("every Deep Field form builds at N=320 and N=720: no NaN, extent ≤ 1.3, exactly N points", not df["bad"], df["bad"][:5])
     check("robot forms report upright", df["upright"] == [True, False], df["upright"])
     check("deepfield backdrop init+draw on OffscreenCanvas ≤ 3 ms/frame", df["ms"] < 3 and df["alpha"] > 0, f"{df['ms']:.2f} ms, alpha {df['alpha']}")
@@ -255,6 +257,15 @@ with sync_playwright() as p:
     try: wait(wp, f"{R}.engine.theme.id === 'deepfield' && {R}.engine.toForm.id === 'ship-omen'", 10000); ok = True
     except Exception: ok = False
     check("cold start via #world=deepfield&form=ship-omen", ok, wp.evaluate(f"[{R}.engine.theme && {R}.engine.theme.id, {R}.engine.toForm.id]"))
+    wc.close()
+    wc, wp = fresh(BASE + "#world=deepfield&form=robot-voxel-recon-bot")
+    try: wait(wp, f"{R}.engine.toForm.id === 'robot-voxel-recon-bot'", 10000)
+    except Exception: pass
+    wp.keyboard.press("i"); wait(wp, "!!document.querySelector('#info-panel')")
+    info = wp.inner_text("#info-panel")
+    check("Info panel credits the current model (voxel robot: Max Parata, CC BY-ND 4.0)", re.search(r"Model\s+Recon Bot by Max Parata \(CC BY-ND 4\.0\)", info) is not None, info.replace("\n", " | ")[-120:])
+    pool = wp.evaluate(f"{R}.engine.pool")
+    check("deepfield pool includes all 9 voxel robots", sum(1 for f in pool if f.startswith("robot-voxel-")) == 9, len(pool))
     wc.close()
     wc, wp = fresh()
     wp.click("#nav-worlds")

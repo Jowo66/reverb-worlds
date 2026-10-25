@@ -41,6 +41,86 @@ def load_obj(path):
     return verts, tris
 
 
+def load_vox(path):
+    """Occupied cells {(x, y, z)} of a MagicaVoxel .vox file (first model; z is up)."""
+    data = pathlib.Path(path).read_bytes()
+    if data[:4] != b"VOX ":
+        raise ValueError(f"{path}: not a .vox file")
+    i = 20  # "VOX ", version, then the MAIN chunk header (id, content size, children size)
+    while i + 12 <= len(data):
+        cid, size = data[i:i + 4], int.from_bytes(data[i + 4:i + 8], "little")
+        if cid == b"XYZI":
+            n = int.from_bytes(data[i + 12:i + 16], "little")
+            return {tuple(data[i + 16 + 4 * k:i + 19 + 4 * k]) for k in range(n)}
+        i += 12 + size  # children of non-MAIN chunks are empty in practice
+    raise ValueError(f"{path}: no XYZI chunk")
+
+
+def coarsen(cells, k):
+    """Merge k×k×k blocks; a block is solid when at least half its cells are (drops 1-voxel surface detail)."""
+    if k <= 1:
+        return set(cells)
+    count = defaultdict(int)
+    for x, y, z in cells:
+        count[(x // k, y // k, z // k)] += 1
+    return {b for b, n in count.items() if 2 * n >= k ** 3}
+
+
+def voxel_edges(cells):
+    """Edges where the voxel solid bends, merged along straight runs: (vertices, index pairs).
+
+    A grid edge is drawn when the four cells around it are not a flat face: 1 or 3
+    occupied, or 2 on a diagonal. Vertices are (x, z, -y), so z-up voxels stand y-up.
+    """
+    runs = defaultdict(set)  # (axis, the two other coords) -> positions along axis
+    for axis in range(3):
+        u, v = [d for d in range(3) if d != axis]
+        cand = set()
+        for c in cells:
+            for du in (0, 1):
+                for dv in (0, 1):
+                    p = list(c)
+                    p[u] += du
+                    p[v] += dv
+                    cand.add(tuple(p))
+        for p in cand:
+            occ = []
+            for du, dv in ((0, 0), (1, 0), (1, 1), (0, 1)):  # around the edge, in order
+                q = list(p)
+                q[u] -= du
+                q[v] -= dv
+                occ.append(tuple(q) in cells)
+            n = sum(occ)
+            if n in (1, 3) or (n == 2 and occ[0] == occ[2]):
+                runs[(axis, p[u], p[v])].add(p[axis])
+    verts, index, edges = [], {}, []
+
+    def vid(p):
+        key = (p[0], p[2], -p[1])
+        if key not in index:
+            index[key] = len(verts)
+            verts.append(key)
+        return index[key]
+
+    for (axis, a, b), pos in runs.items():
+        u, v = [d for d in range(3) if d != axis]
+        pos = sorted(pos)
+        start = prev = pos[0]
+        for t in pos[1:] + [None]:
+            if t is not None and t == prev + 1:
+                prev = t
+                continue
+            ends = []
+            for s in (start, prev + 1):
+                p = [0, 0, 0]
+                p[axis], p[u], p[v] = s, a, b
+                ends.append(vid(p))
+            edges.append(tuple(ends))
+            if t is not None:
+                start = prev = t
+    return verts, edges
+
+
 def _weld(verts, tris):
     key, remap = {}, []
     for v in verts:
@@ -120,11 +200,14 @@ def _rotate(p, deg):
     return (x, y, z)
 
 
-def bake(path, angle=50, edges=150, rotate=(0, 0, 0)):
-    """Polylines of a model's longest feature edges, centred and scaled to EXTENT."""
-    verts, tris = load_obj(path)
-    welded, wtris = _weld(verts, tris)
-    feat = feature_edges(welded, wtris, angle)
+def bake(path, angle=50, edges=150, rotate=(0, 0, 0), block=1):
+    """Polylines of a model's (OBJ or .vox) longest feature edges, centred and scaled to EXTENT."""
+    if str(path).lower().endswith(".vox"):
+        welded, feat = voxel_edges(coarsen(load_vox(path), block))
+    else:
+        verts, tris = load_obj(path)
+        welded, wtris = _weld(verts, tris)
+        feat = feature_edges(welded, wtris, angle)
     feat.sort(key=lambda e: -math.dist(welded[e[0]], welded[e[1]]))
     lines = _chain(feat[:edges])
     pts = {i: _rotate(welded[i], rotate) for line in lines for i in line}
@@ -136,10 +219,10 @@ def bake(path, angle=50, edges=150, rotate=(0, 0, 0)):
     return [[tuple((pts[i][d] - mid[d]) * s for d in range(3)) for i in line] for line in lines]
 
 
-def bake_fit(path, angle=50, edges=150, rotate=(0, 0, 0), max_polylines=MAX_POLYLINES):
+def bake_fit(path, angle=50, edges=150, rotate=(0, 0, 0), max_polylines=MAX_POLYLINES, block=1):
     """bake(), shrinking the edge budget by 10% until the polylines fit the engine's path limit."""
     while True:
-        lines = bake(path, angle, edges, rotate)
+        lines = bake(path, angle, edges, rotate, block)
         if len(lines) <= max_polylines or edges <= 1:
             return lines
         edges = max(1, int(edges * 0.9))
@@ -224,7 +307,7 @@ def main():
         if e["id"] in seen:
             sys.exit(f"duplicate id {e['id']}")
         seen.add(e["id"])
-        lines = bake_fit(pathlib.Path(args.assets) / e["src"], e.get("angle", 50), e.get("edges", 150), e.get("rotate", [0, 0, 0]))
+        lines = bake_fit(pathlib.Path(args.assets) / e["src"], e.get("angle", 50), e.get("edges", 150), e.get("rotate", [0, 0, 0]), block=e.get("block", 1))
         lines = decode(encode(lines))  # validate exactly what ships
         try:
             validate(e["id"], lines)
@@ -237,7 +320,7 @@ def main():
     body = ",\n".join("  " + json.dumps(b, separators=(", ", ": ")) for b in baked)
     pathlib.Path(args.out).write_text(
         "// GENERATED by tools/bake_forms.py from tools/forms-manifest.json; do not edit by hand.\n"
-        "// Hologram forms traced from CC0 models by Quaternius (quaternius.com).\n"
+        "// Hologram forms traced from 3D models; each entry's credit names its author and licence.\n"
         f"export const BAKED = [\n{body},\n];\n", encoding="utf-8", newline="\n")
     print("wrote", args.out, pathlib.Path(args.out).stat().st_size, "bytes")
     if args.preview:

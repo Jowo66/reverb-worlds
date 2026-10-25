@@ -1,6 +1,6 @@
 # CLAUDE.md: REVERB // WORLDS
 
-A static music player with 15 visual "worlds" and a music-reactive hologram, hosted on GitHub Pages at https://jowo66.github.io/reverb-worlds/. Plain HTML, CSS and ES modules: **no framework, no build step, no bundler, no image or audio assets.** Everything visual and the demo music is generated in code. (Deep Field's ship/robot forms are edge data baked from CC0 models by the offline tool `tools/bake_forms.py` and committed as JS; the owner approved this on 25 Oct 2026.) Keep it that way unless the owner explicitly asks otherwise.
+A static music player with 15 visual "worlds" and a music-reactive hologram, hosted on GitHub Pages at https://jowo66.github.io/reverb-worlds/. Plain HTML, CSS and ES modules: **no framework, no build step, no bundler, no image or audio assets.** Everything visual and the demo music is generated in code. (Deep Field's ship/robot forms are edge data baked from 3D models by the offline tool `tools/bake_forms.py` and committed as JS; the owner approved this on 25 Oct 2026. Sources: CC0 Quaternius models, and Max Parata's voxel robots, which are CC BY-ND 4.0; the owner chose to rely on the author's "use it for any kind of project" wording, credited in the Info panel.) Keep it that way unless the owner explicitly asks otherwise.
 
 Owner: Ejovwo Obahor (GitHub `Jowo66`). Background reading: `README.md` (features, setup, performance table).
 
@@ -16,8 +16,8 @@ cd .. && python3 -m http.server 8765 --bind 127.0.0.1
 python3 reverb-worlds/tests/smoke_test.py        http://127.0.0.1:8765/reverb-worlds/   # 105 checks
 python3 reverb-worlds/tests/spotify_mock_test.py http://127.0.0.1:8765/reverb-worlds/   # 41 checks, simulated Spotify
 python3 reverb-worlds/tests/optimization_test.py http://127.0.0.1:8765/reverb-worlds/   # 24 checks
-python3 reverb-worlds/tests/features_test.py     http://127.0.0.1:8765/reverb-worlds/   # 65 checks (v1.1, v1.2 share links + developer overlay, startup budget, Deep Field)
-python -m unittest reverb-worlds/tests/test_bake_forms.py                         # 6 checks, model baking tool
+python3 reverb-worlds/tests/features_test.py     http://127.0.0.1:8765/reverb-worlds/   # 68 checks (v1.1, v1.2 share links + developer overlay, startup budget, Deep Field)
+python -m unittest reverb-worlds/tests/test_bake_forms.py                         # 12 checks, model baking tool
 
 # Syntax check one module quickly
 node --check js/app.js
@@ -88,7 +88,7 @@ Pushing to `main` runs `.github/workflows/pages.yml`. It copies only `index.html
 ## Adding a world (checklist)
 
 1. Add an entry to `THEMES` in `js/theme-registry.js` (unique `id`, `num`, palette passing contrast, fonts, panel, `background.renderer`, `hologram.*` with 8+ forms).
-2. **Prefer a world pack** (the startup budget has ~1 KB left): set `pack: '<id>'` and put the backdrop (`backdrop = { init, draw }`, worker-safe `init`, read-only `draw`) and forms (`forms = { id: { label, build, upright? } }`) in `js/worlds/<id>.js`; add it to `SHELL` in `sw.js`. Forms traced from 3D models: add entries to `tools/forms-manifest.json` (CC0/redistributable licences only) and run `tools/bake_forms.py`. Only built-in worlds go straight into `js/hologram/forms.js` / `backdrops.js`.
+2. **Prefer a world pack** (the startup budget has ~0.4 KB left): set `pack: '<id>'` and put the backdrop (`backdrop = { init, draw }`, worker-safe `init`, read-only `draw`) and forms (`forms = { id: { label, build, upright?, credit? } }`) in `js/worlds/<id>.js`; add it to `SHELL` in `sw.js`. Forms traced from 3D models: add entries to `tools/forms-manifest.json` (CC0/redistributable licences, or an explicit owner decision; always set `credit` to author + licence, the Info panel shows it) and run `tools/bake_forms.py`. Only built-in worlds go straight into `js/hologram/forms.js` / `backdrops.js`.
 3. Validate forms: no NaN, extent ≤ ~1.3, enough points/links, ≤ 140 paths (the low tier keeps 160).
 4. Add its fonts to `js/font-loader.js`, and its ornament to `css/themes.css` (`[data-theme="<id>"]`).
 5. Update counts in tests, the README, `index.html` (`#worlds-count` is static until a search) and the tour copy in `js/features/tour.js`.
@@ -102,7 +102,7 @@ The plan for upcoming work is `docs/ROADMAP.md` (v2.0). Rules for working on it:
 - Owner decisions: **no community presets / no backend**, and **no visitor analytics, tracking or counters of any kind**. Don't propose them again.
 - Add checks for every new feature to the relevant test suite and update the check counts in this file and the README.
 - Respect the roadmap's budgets: startup JS/CSS ≤ 335 KB raw (lazy-load new features), backdrop ≤ 3 ms/frame, 60 fps target. The budget is measured by `features_test.py` from the files on disk that load at startup (JS + CSS, not HTML). After v1.1 it is **334.7 KB, so there is almost no headroom**: new startup code must be offset, and anything not needed for first paint goes into a `js/features/` module.
-- v1.1 (Experience format, Continue Session, Favourites, Saved tab + presets, Info panel, Tour) is **done**. v1.2 is in progress: **Share links are done** (readable hash, e.g. `#world=ukiyo&form=moon-disc&i=61&rx=0.30&ry=1.20&src=reverb:tessellate&bpm=104`; every link goes through `validate`, can only lower motion, never autoplays, and wins over the saved session). The compact `#x=<base64url>` form from the roadmap was not built: the readable form already carries every Experience field. The **Developer Overlay is done** too. Still to do: World Personalities, Case Study page. Startup budget now: 334.0 KB after Deep Field (banner-comment padding was stripped across the startup files to make room; there is little left to strip, so new startup code must come out of real code).
+- v1.1 (Experience format, Continue Session, Favourites, Saved tab + presets, Info panel, Tour) is **done**. v1.2 is in progress: **Share links are done** (readable hash, e.g. `#world=ukiyo&form=moon-disc&i=61&rx=0.30&ry=1.20&src=reverb:tessellate&bpm=104`; every link goes through `validate`, can only lower motion, never autoplays, and wins over the saved session). The compact `#x=<base64url>` form from the roadmap was not built: the readable form already carries every Experience field. The **Developer Overlay is done** too. Still to do: World Personalities, Case Study page. Startup budget now: 334.6 KB after Deep Field and its voxel robots (banner-comment padding was stripped across the startup files to make room; there is little left to strip, so new startup code must come out of real code).
 - Each world's original art-direction brief lives in `docs/WORLDS.md` (not loaded at runtime).
 - Flag anything that can't be verified locally (e.g. whether Spotify cover art can be exported to a canvas) instead of assuming.
 

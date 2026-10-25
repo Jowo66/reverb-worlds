@@ -2,8 +2,8 @@
  * deepfield.js: world pack for 15 · Deep Field (pixel cosmos). Loaded on demand
  * by world-packs.js, in the window and in backdrop-worker.js.
  *
- *   forms     20 forms traced from CC0 Quaternius models (deepfield-baked.js)
- *             + 4 procedural ones
+ *   forms     29 forms traced from 3D models (deepfield-baked.js): 20 CC0
+ *             Quaternius, 9 Max Parata voxel robots (CC BY-ND 4.0), + 4 procedural
  *   backdrop  pixel planets ported from Deep-Fold's MIT "Pixel Planets" and
  *             "Space Background" shaders: tiled fbm noise, spherified planets,
  *             banded light and dithering. The noise is sampled into tables in
@@ -100,7 +100,7 @@ const PROCEDURAL = {
 export const forms = { ...PROCEDURAL };
 for (const f of BAKED) {
   const paths = decode(f.data);
-  forms[f.id] = { label: f.label, upright: f.upright, build: () => paths };
+  forms[f.id] = { label: f.label, upright: f.upright, credit: f.credit, build: () => paths };
 }
 
 /* -------------------------------------------------------------- backdrop */

@@ -147,5 +147,86 @@
     "credit": "Quaternius (CC0)",
     "edges": 250,
     "upright": true
+  },
+  {
+    "id": "robot-voxel-arachnodroid",
+    "label": "Arachnodroid",
+    "src": "Mechs & Robots/Arachnodroid/Arachnoid.vox",
+    "credit": "Max Parata (CC BY-ND 4.0)",
+    "edges": 250,
+    "upright": true,
+    "block": 2
+  },
+  {
+    "id": "robot-voxel-companion-bot",
+    "label": "Companion Bot",
+    "src": "Mechs & Robots/Companion Bot/Companion-bot.vox",
+    "credit": "Max Parata (CC BY-ND 4.0)",
+    "edges": 250,
+    "upright": true,
+    "block": 2
+  },
+  {
+    "id": "robot-voxel-field-fighter",
+    "label": "Field Fighter",
+    "src": "Mechs & Robots/Field Fighter/FieldFighter.vox",
+    "credit": "Max Parata (CC BY-ND 4.0)",
+    "edges": 250,
+    "upright": true,
+    "block": 2
+  },
+  {
+    "id": "robot-voxel-mecha-golem",
+    "label": "Mecha Golem",
+    "src": "Mechs & Robots/Mech Golem/MechaGolem.vox",
+    "credit": "Max Parata (CC BY-ND 4.0)",
+    "edges": 250,
+    "upright": true,
+    "block": 3
+  },
+  {
+    "id": "robot-voxel-mecha-01",
+    "label": "Mecha 01",
+    "src": "Mechs & Robots/Mecha 01/Mecha01.vox",
+    "credit": "Max Parata (CC BY-ND 4.0)",
+    "edges": 250,
+    "upright": true,
+    "block": 4
+  },
+  {
+    "id": "robot-voxel-mecha-trooper",
+    "label": "Mecha Trooper",
+    "src": "Mechs & Robots/Mecha Trooper/MechaTrooper.vox",
+    "credit": "Max Parata (CC BY-ND 4.0)",
+    "edges": 250,
+    "upright": true,
+    "block": 3
+  },
+  {
+    "id": "robot-voxel-mobile-storage-bot",
+    "label": "Mobile Storage Bot",
+    "src": "Mechs & Robots/Mobile Storage Bot/MobileStorageBot.vox",
+    "credit": "Max Parata (CC BY-ND 4.0)",
+    "edges": 250,
+    "upright": true,
+    "block": 4
+  },
+  {
+    "id": "robot-voxel-quadruped-tank",
+    "label": "Quadruped Tank",
+    "src": "Mechs & Robots/Quadruped Tank/QuadrupedTank.vox",
+    "credit": "Max Parata (CC BY-ND 4.0)",
+    "edges": 250,
+    "upright": true,
+    "block": 4
+  },
+  {
+    "id": "robot-voxel-recon-bot",
+    "label": "Recon Bot",
+    "src": "Mechs & Robots/Recon Bot/ReconBot.vox",
+    "credit": "Max Parata (CC BY-ND 4.0)",
+    "edges": 250,
+    "upright": true,
+    "block": 4
   }
 ]

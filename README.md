@@ -2,7 +2,7 @@
 
 A static, GitHub Pages–ready music player with **15 selectable visual worlds** and a signature **music-reactive hologram**. Every world shares one player and one hologram engine. Each world brings its own art direction, materials, form pool, transition and reactions.
 
-There are no build step, frameworks, or image or audio assets. Everything is plain HTML/CSS and ES modules, and every visual is drawn in code (Canvas 2D). Hologram forms in Deep Field are traced from CC0 models by Quaternius (quaternius.com); its planets port the maths of Deep-Fold's MIT-licensed Pixel Planets shaders.
+There are no build step, frameworks, or image or audio assets. Everything is plain HTML/CSS and ES modules, and every visual is drawn in code (Canvas 2D). Hologram forms in Deep Field are traced from 3D models: CC0 ships and robots by Quaternius (quaternius.com) and voxel robots by Max Parata (maxparata.itch.io, CC BY-ND 4.0); its planets port the maths of Deep-Fold's MIT-licensed Pixel Planets shaders.
 
 ---
 
@@ -16,7 +16,7 @@ There are no build step, frameworks, or image or audio assets. Everything is pla
 | **v1.1:** Continue Last Session (world, shape, view and the REVERB track cued at the same position, with a Resume prompt) · Favourites (☆ on worlds, shapes and REVERB tracks; keys 1–9) · Library › Saved (save named Experiences; 4 built-in presets) · World Info panel (ⓘ or I) · 60-second tour | ✅ |
 | **v1.2:** Share links: Library › Saved › Copy share link (or Link on a saved experience) copies a readable URL with the world, shape, view, settings and REVERB track. Opening one sets everything up and offers Play; it never autoplays and can only lower motion. Developer Overlay (D or `?debug`): frame rate, backdrop cost vs the 3 ms budget, audio meters, onset ticks (labelled with their source), particles, quality, blur, worker and caches | ✅ |
 | **Grab & rotate** the hologram: drag with mouse or touch (with momentum), arrow keys when focused, double-click or Home to reset | ✅ |
-| Hologram engine: 137 forms, 8 per world (9 for Japanese Scroll, 24 for Deep Field: 20 ships and robots traced from 3D models plus 4 procedural); random selection without immediate repeats; manual **Morph**; **Auto-morph** (timer, or every 16 detected onsets); **Auto-world** | ✅ |
+| Hologram engine: 146 forms, 8 per world (9 for Japanese Scroll, 33 for Deep Field: 29 ships and robots traced from 3D models plus 4 procedural); random selection without immediate repeats; manual **Morph**; **Auto-morph** (timer, or every 16 detected onsets); **Auto-world** | ✅ |
 | 15 transition styles (scan-wipe, iris, stroke-redraw, tile-reassemble, brush-reveal, emerge, spray, low-poly scan, slab, lead-assemble, crossfade, focus-pull, pixel-sort, bubble-float, pixel-dissolve) | ✅ |
 | Per-world kick / snare / high-frequency reactions and ambient particles | ✅ |
 | Animated procedural backdrop per world, plus procedural world-card thumbnails | ✅ |
@@ -127,9 +127,9 @@ Spotify integrations against **mocked** Spotify endpoints (38 checks: catalogue 
 python3 reverb-worlds/tests/spotify_mock_test.py http://127.0.0.1:8765/reverb-worlds/
 ```
 
-`tests/features_test.py` (65 checks) covers the v1.1 features, v1.2 share links and developer overlay, the startup budget, and Deep Field (pack loading, failure fallback, cold-start links, pixel look, reduced motion).
+`tests/features_test.py` (68 checks) covers the v1.1 features, v1.2 share links and developer overlay, the startup budget, and Deep Field (pack loading, failure fallback, cold-start links, pixel look, reduced motion, model credits).
 
-`tests/test_bake_forms.py` (6 checks, `python -m unittest tests/test_bake_forms.py`) covers the model baking tool.
+`tests/test_bake_forms.py` (12 checks, `python -m unittest tests/test_bake_forms.py`) covers the model baking tool.
 
 The smoke test covers 105 checks:
 - All 15 worlds apply, with playback continuing across every switch, and each has 8+ holograms.
@@ -147,11 +147,11 @@ The smoke test covers 105 checks:
 - Mobile and tablet layouts have no horizontal scroll.
 
 ## Baking hologram forms from 3D models
-`tools/bake_forms.py` (authoring only, never deployed) traces a model's sharp edges into compact polylines and writes `js/worlds/deepfield-baked.js`. The forms to bake are listed in `tools/forms-manifest.json`.
+`tools/bake_forms.py` (authoring only, never deployed) traces a model's sharp edges (OBJ meshes, or MagicaVoxel `.vox` grids, optionally coarsened with `"block": k` to drop one-voxel surface detail) into compact polylines and writes `js/worlds/deepfield-baked.js`. The forms to bake are listed in `tools/forms-manifest.json`.
 ```bash
 python tools/bake_forms.py --assets "<folder with the models>" --preview bake.png
 ```
-Only use models whose licence allows redistribution (the Deep Field forms are CC0).
+Only use models whose licence allows this use, and put the author and licence in the entry's `credit`; the Info panel (I) shows it for the current form. The Quaternius forms are CC0. The Max Parata voxel robots are CC BY-ND 4.0: the author's page says they may be used in any project, and the owner chose on 25 Oct 2026 to rely on that for these traced outlines.
 
 ## Keyboard
 `Space` play/pause · `←/→` seek 5 s · `N`/`P` next/previous · `M` morph · `[`/`]` previous/next world · `V` pause visuals · `Esc` closes sheets.
@@ -221,4 +221,4 @@ How each works:
 - Demo tracks render offline in roughly 1–3 s on a typical laptop (slower on low-end devices). The first one pre-renders in the background on load.
 
 ## Credits & originality
-All visuals, silhouettes, patterns and music are generated by code in this repository. None of it is copied from existing artworks or tracks. The cave pictograms are an artistic interpretation, not authentic historical writing. This project is not affiliated with or endorsed by Spotify. Spotify playback uses only Spotify's official embed and SDK, under Spotify's developer terms.
+All visuals, silhouettes, patterns and music are generated by code in this repository. None of it is copied from existing artworks or tracks. Exceptions: Deep Field's hologram forms are outlines traced from 3D models by Quaternius (CC0, quaternius.com) and Max Parata ("Voxel Mechas & Robots", CC BY-ND 4.0, maxparata.itch.io/voxel-mechas); its planets port the maths of Deep-Fold's MIT-licensed Pixel Planets and Space Background shaders. The cave pictograms are an artistic interpretation, not authentic historical writing. This project is not affiliated with or endorsed by Spotify. Spotify playback uses only Spotify's official embed and SDK, under Spotify's developer terms.

@@ -41,7 +41,7 @@ function script() {
       const st = A.player.state;
       if (!st.playing) A.player.playIndex(Math.max(0, st.index));
     }],
-    [7, 'The hologram has 137 forms. Each morphs into the next point-for-point.', () => A.engine.morph()],
+    [7, 'The hologram has 146 forms. Each morphs into the next point-for-point.', () => A.engine.morph()],
     [12, 'Each world has its own morph style, reactions and particles.', () => A.engine.morph()],
     [17, 'Switching worlds never interrupts the music: Cyberpunk…', () => A.themeManager.apply('cyberpunk', 'tour')],
     [23, '…Japanese Scroll: flat woodblock-print shapes and ink…', () => A.themeManager.apply('ukiyo', 'tour')],
