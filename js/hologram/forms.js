@@ -1197,7 +1197,7 @@ export function buildForm(id, N, seed = 1) {
   let d = 0;
   while (w < N) { const q = pool[d % pool.length]; pos[w * 3] = q[0]; pos[w * 3 + 1] = q[1]; pos[w * 3 + 2] = q[2]; link[w] = 0; w++; d++; }
 
-  return { id, label: def.label, flat: !!def.flat, pos, link, groups };
+  return { id, label: def.label, flat: !!def.flat, upright: !!def.upright, pos, link, groups };
 }
 
 export { SIL };

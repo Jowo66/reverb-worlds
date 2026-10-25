@@ -187,6 +187,34 @@ with sync_playwright() as p:
     check("share links: no JS errors", not serr, serr[:3])
     sc.close()
 
+    # ---- Deep Field pack module (forms + backdrop), imported directly
+    dfp = b.new_context(viewport={"width": 1440, "height": 900}).new_page()
+    dfp.goto(BASE); wait(dfp, f"{R} && {R}.engine.toForm")
+    df = dfp.evaluate("""(async () => {
+      const m = await import('./js/worlds/deepfield.js'), F = await import('./js/hologram/forms.js');
+      Object.assign(F.FORMS, m.forms);
+      const ids = Object.keys(m.forms), bad = [];
+      for (const id of ids) for (const N of [320, 720]) {
+        const f = F.buildForm(id, N, 1); let ext = 0, ok = f.pos.length === N * 3;
+        for (const v of f.pos) { if (!Number.isFinite(v)) ok = false; ext = Math.max(ext, Math.abs(v)); }
+        if (!ok || ext > 1.3) bad.push(`${id}@${N}:${ext.toFixed(2)}`);
+      }
+      const c = new OffscreenCanvas(480, 270), ctx = c.getContext('2d');
+      const S = { w: 480, h: 270, dpr: 0.25, rng: F.mulberry32(1337), glitch: 0.5, animate: true,
+        palette: { bg: '#0b0a1f', surface: '#1a1736', primary: '#ffb454', secondary: '#5fe1d6', accent: '#e05ca8', text: '#f1ecff', muted: '#b4acd9' } };
+      m.backdrop.init(S);
+      const r = { bass: .3, mid: .3, high: .3, energy: .3, kick: .5, snare: 0 }, t0 = performance.now();
+      for (let i = 0; i < 60; i++) m.backdrop.draw(ctx, S, 3 + i / 24, 1 / 24, r);
+      const ms = (performance.now() - t0) / 60, px = ctx.getImageData(240, 135, 1, 1).data;
+      return { n: ids.length, procedural: ['df-ringed-planet', 'df-blackhole', 'df-galaxy', 'df-orbits'].every(k => ids.includes(k)), bad,
+        upright: [F.buildForm('robot-george', 320).upright, F.buildForm('ship-omen', 320).upright], ms, alpha: px[3] };
+    })()""")
+    check("deepfield pack exports 24 forms (20 baked + 4 procedural)", df["n"] == 24 and df["procedural"], df["n"])
+    check("every Deep Field form builds at N=320 and N=720: no NaN, extent ≤ 1.3, exactly N points", not df["bad"], df["bad"][:5])
+    check("robot forms report upright", df["upright"] == [True, False], df["upright"])
+    check("deepfield backdrop init+draw on OffscreenCanvas ≤ 3 ms/frame", df["ms"] < 3 and df["alpha"] > 0, f"{df['ms']:.2f} ms, alpha {df['alpha']}")
+    dfp.context.close()
+
     # ---- mobile layout still fits
     m = b.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True)
     mp = m.new_page(); mp.goto(BASE); wait(mp, f"{R} && {R}.engine.toForm"); time.sleep(1)
