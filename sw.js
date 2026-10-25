@@ -46,6 +46,9 @@ const SHELL = [
     'js/theme-manager.js',
     'js/theme-registry.js',
     'js/version.js',
+    'js/world-packs.js',
+    'js/worlds/deepfield-baked.js',
+    'js/worlds/deepfield.js',
 ];
 
 self.addEventListener('install', e => {

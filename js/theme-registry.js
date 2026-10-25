@@ -246,6 +246,25 @@ export const THEMES = [
       particles: { kind: 'bubble', colors: ['#ffffff', '#bfefff', '#9be37a'], rate: 10 },
     },
   },
+  {
+    id: 'deepfield', num: '15', name: 'Deep Field', tagline: 'Pixel Cosmos', pack: 'deepfield',
+    mood: 'A lone observatory drifting past pixel planets.',
+    palette: { bg: '#0b0a1f', surface: '#1a1736', primary: '#ffb454', primaryInk: '#ffc27a', onPrimary: '#1a0d00', secondary: '#5fe1d6', accent: '#e05ca8', text: '#f1ecff', muted: '#b4acd9', border: 'rgba(95,225,214,0.6)' },
+    fonts: { display: "'Silkscreen', 'VT323', monospace", body: "'Pixelify Sans', system-ui, sans-serif", mono: "'VT323', ui-monospace, monospace" },
+    panel: { radius: '0px', borderWidth: '2px', shadow: '4px 4px 0 #000', alpha: 0.9 },
+    background: { renderer: 'deepfield', fps: 24 },
+    hologram: {
+      forms: ['ship-omen', 'ship-zenith', 'ship-striker', 'ship-spitfire', 'ship-dispatcher', 'ship-executioner', 'ship-bob', 'ship-challenger', 'ship-imperial', 'ship-insurgent', 'ship-pancake',
+        'robot-george', 'robot-leela', 'robot-mike', 'robot-stan', 'robot-robot', 'robot-mech-barbara', 'robot-mech-fernando', 'robot-mech-finn', 'robot-mech-rae',
+        'df-ringed-planet', 'df-blackhole', 'df-galaxy', 'df-orbits'],
+      material: { colors: ['#f1ecff', '#5fe1d6', '#2f8f9e', '#e05ca8'], colorMode: 'depth', composite: 'source-over', lines: false, point: 'pixel', pointSize: 2, glow: 0, glowAlpha: 0 },
+      motion: { rotate: 0.22, tilt: 0.45, morph: 1.6 },
+      transition: 'pixel-sort',
+      reactions: { kick: 'grid-ripple', snare: 'rgb-scan', high: 'sparkle-wave' },
+      particles: { kind: 'spark', colors: ['#ffb454', '#5fe1d6', '#f1ecff'], rate: 10 },
+    },
+    a11y: {},
+  },
 ];
 
 export const THEME_BY_ID = Object.fromEntries(THEMES.map(t => [t.id, t]));

@@ -6,10 +6,11 @@
  */
 import { BACKDROPS } from './backdrops.js';
 import { mulberry32 } from './forms.js';
+import { ensurePack } from '../world-packs.js';
 
 const ZERO = { bass: 0, mid: 0, high: 0, energy: 0, kick: 0, snare: 0 };
 
-async function thumb({ id, renderer, w, h, build }) {
+async function thumb({ id, renderer, pack, w, h, build }) {
   const key = `thumb/${id}-${w}x${h}.png`;
   let cache = null;
   if (build !== 'dev' && self.caches) {
@@ -19,6 +20,7 @@ async function thumb({ id, renderer, w, h, build }) {
       if (hit) return { bitmap: await createImageBitmap(await hit.blob()), cached: true };
     } catch { cache = null; }
   }
+  await ensurePack({ pack, background: { renderer } });
   const c = new OffscreenCanvas(w, h), ctx = c.getContext('2d');
   const S = { w, h, dpr: 0.5, rng: mulberry32(7), glitch: 0.5, animate: false };
   BACKDROPS[renderer].init(S);
@@ -28,7 +30,8 @@ async function thumb({ id, renderer, w, h, build }) {
 }
 
 /** Run a backdrop's init() and ship its state back; layer canvases become transferable ImageBitmaps. */
-function init({ renderer, w, h, dpr, glitch }) {
+async function init({ renderer, pack, w, h, dpr, glitch }) {
+  await ensurePack({ pack, background: { renderer } });
   const S = { w, h, dpr, rng: mulberry32(1337), glitch, animate: false };
   BACKDROPS[renderer].init(S);
   delete S.rng; // functions can't be cloned; the main thread re-adds it
@@ -45,7 +48,7 @@ self.onmessage = async ({ data }) => {
       const { bitmap, cached } = await thumb(data);
       self.postMessage({ type: 'thumb', id: data.id, bitmap, cached }, [bitmap]);
     } else if (data.type === 'init') {
-      const { S, transfer } = init(data);
+      const { S, transfer } = await init(data);
       self.postMessage({ type: 'init', seq: data.seq, S }, transfer);
     }
   } catch (err) {

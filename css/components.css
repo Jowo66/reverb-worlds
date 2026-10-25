@@ -1,10 +1,10 @@
-/* ---------------------------------------------------------------- type helpers */
+/* type helpers */
 .section-label {
   font-family: var(--font-display);
   font-size: 13px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); font-weight: 600;
 }
 
-/* ---------------------------------------------------------------- buttons */
+/* buttons */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   min-height: 40px; padding: 8px 14px;
@@ -45,7 +45,7 @@
 .repeat .repeat-one { position: absolute; right: 6px; top: 5px; font-size: 10px; font-weight: 800; display: none; }
 .repeat[data-mode="one"] .repeat-one { display: block; }
 
-/* ---------------------------------------------------------------- inputs */
+/* inputs */
 .search input, .inline-form input, .settings input[type="text"], .settings select {
   width: 100%; min-height: 40px; padding: 8px 12px;
   border-radius: var(--radius); border: 1px solid var(--border);
@@ -62,7 +62,7 @@
 .range[disabled] { opacity: .5; cursor: default; }
 .range-volume { width: 110px; }
 
-/* ---------------------------------------------------------------- chips & badges */
+/* chips & badges */
 .chip {
   display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px;
   background: rgba(var(--surface-rgb), .85); border: 1px solid var(--border);
@@ -74,7 +74,7 @@
 .badge { display: inline-block; margin-left: 6px; padding: 2px 7px; border-radius: 999px; font-size: 11px; letter-spacing: .05em; background: var(--primary); color: var(--on-primary); vertical-align: middle; font-family: var(--font-body); font-weight: 700; }
 .badge-muted { background: transparent; color: var(--muted); border: 1px solid var(--border); }
 
-/* ---------------------------------------------------------------- world intro */
+/* world intro */
 .world-intro { padding: var(--pad); display: flex; flex-direction: column; gap: 8px; }
 .world-num { font-family: var(--font-mono); color: var(--muted); letter-spacing: .12em; }
 .world-num #world-num { color: var(--primary-ink); font-size: 1.4em; }
@@ -83,7 +83,7 @@
 .world-mood { color: var(--muted); }
 .world-step { display: flex; gap: 8px; margin-top: auto; padding-top: 8px; }
 
-/* ---------------------------------------------------------------- now playing */
+/* now playing */
 .now-playing { padding: var(--pad); display: flex; flex-direction: column; gap: 12px; }
 .np-body { display: flex; gap: 14px; align-items: center; }
 .np-art, .player-art { flex: none; border-radius: calc(var(--radius) * .7); background: rgba(127,127,127,.2) center / cover no-repeat; border: 1px solid var(--border); }
@@ -94,7 +94,7 @@
 .np-status { font-size: 14px; color: var(--muted); min-height: 1.4em; }
 .np-status[data-tone="error"] { color: var(--text); border-left: 3px solid var(--accent); padding-left: 8px; }
 
-/* ---------------------------------------------------------------- library */
+/* library */
 .library-head { display: flex; justify-content: space-between; align-items: center; padding: var(--pad) var(--pad) 8px; }
 .sheet-close { display: none; }
 @media (max-width: 1100px) { .sheet-close { display: inline-flex; } }
@@ -124,7 +124,7 @@ button.queue-item:hover { border-color: var(--border); }
 .dropzone:focus-within { outline: var(--focus); outline-offset: 2px; }
 .dropzone.dragover { border-color: var(--primary); color: var(--text); }
 
-/* ---------------------------------------------------------------- worlds */
+/* worlds */
 .worlds { padding: var(--pad); }
 .worlds-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
 .worlds-hint { color: var(--muted); font-size: 14px; }
@@ -149,7 +149,7 @@ button.queue-item:hover { border-color: var(--border); }
   .world-grid > li { flex: 0 0 58%; scroll-snap-align: start; }
 }
 
-/* ---------------------------------------------------------------- player bar */
+/* player bar */
 .player-track { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .player-art { width: 56px; height: 56px; }
 .player-meta { min-width: 0; }
@@ -181,7 +181,7 @@ button.queue-item:hover { border-color: var(--border); }
   .range-volume { width: 140px; }
 }
 
-/* ---------------------------------------------------------------- provider surface */
+/* provider surface */
 /* Spotify embed docked in the player bar */
 .player-embed { min-width: 0; }
 .player-embed .embed-mount, .player-embed .embed-mount > * { width: 100%; }
@@ -195,7 +195,7 @@ button.queue-item:hover { border-color: var(--border); }
   .player.player--embed .player-track .player-art { display: none; }
 }
 
-/* ---------------------------------------------------------------- settings dialog */
+/* settings dialog */
 .settings {
   width: min(560px, calc(100vw - 24px)); max-height: calc(100vh - 24px);
   color: var(--text); overflow: auto;
@@ -222,7 +222,7 @@ button.queue-item:hover { border-color: var(--border); }
 kbd { font-family: var(--font-mono); border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; }
 @media (max-width: 520px) { .settings .row { grid-template-columns: 1fr auto; } .settings .row select, .settings .row input[type="text"] { grid-column: 1 / -1; } }
 
-/* ---------------------------------------------------------------- toast, sheet backdrop */
+/* toast, sheet backdrop */
 .toast {
   position: fixed; left: 50%; bottom: calc(var(--player-h) + var(--gap) * 2 + 8px); transform: translate(-50%, 20px);
   z-index: 60; padding: 10px 16px; border-radius: var(--radius); max-width: min(560px, 92vw);
@@ -238,7 +238,7 @@ kbd { font-family: var(--font-mono); border: 1px solid var(--border); border-bot
 }
 html[data-motion="static"] *, html[data-motion="reduced"] * { transition-duration: 1ms !important; }
 
-/* ---------------------------------------------------------------- Spotify playlist picker */
+/* Spotify playlist picker */
 .playlist-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; }
 .playlist-grid:empty { display: none; }
 .pl-card { display: flex; flex-direction: column; gap: 6px; width: 100%; padding: 6px; text-align: left; border-radius: var(--radius); border: 2px solid transparent; background: rgba(127,127,127,.1); }
@@ -249,7 +249,7 @@ html[data-motion="static"] *, html[data-motion="reduced"] * { transition-duratio
 .pl-meta { font-size: 12px; color: var(--muted); }
 .pl-card[aria-current="true"] .pl-meta::before { content: "▶ Playing · "; color: var(--primary-ink); font-weight: 700; }
 
-/* ---------------------------------------------------------------- Spotify search */
+/* Spotify search */
 .sp-types label { min-height: 34px; padding: 4px 10px; font-size: 13px; }
 .sp-group h4 { font-family: var(--font-display); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 12px 0 6px; }
 .sp-list { display: flex; flex-direction: column; gap: 4px; }
@@ -267,7 +267,7 @@ html[data-motion="static"] *, html[data-motion="reduced"] * { transition-duratio
 
 .toast.has-action { pointer-events: auto; display: flex; align-items: center; gap: 12px; }
 
-/* ---------------------------------------------------------------- v1.1: favourites, info, tour */
+/* v1.1: favourites, info, tour */
 .hud-right { display: flex; gap: 6px; align-items: center; }
 .hud-btn { pointer-events: auto; min-height: 32px; padding: 4px 10px; font-size: 13px; background: rgba(var(--surface-rgb), .85); }
 .hud-btn.btn-icon { width: 34px; min-width: 34px; height: 34px; }

@@ -185,14 +185,19 @@ export class HologramEngine {
     this.effects.length = 0;
     this.particles.alive = 0;
     for (let i = 0; i < this.particles.n; i++) this.particles.life[i] = 0;
-    // Cross-world morph: from whatever is on screen into a form of the new world.
-    this.morph(null, { instant: first });
+    // Cross-world morph: from whatever is on screen into a form of the new world
+    // (or the form asked for while this world's pack was still loading).
+    const wanted = this.wanted && h.forms.includes(this.wanted) ? this.wanted : null;
+    this.wanted = null;
+    this.morph(wanted, { instant: first });
   }
 
   /** Morph to a specific form id or a random one from the pool (no immediate repeats). */
   morph(formId = null, { instant = false } = {}) {
+    // A form from another world (its pack still loading): remember it for the next setTheme.
+    if (formId && !this.pool?.includes(formId)) { this.wanted = formId; return this.toForm?.id; }
     if (!this.pool) return;
-    const id = formId && this.pool.includes(formId) ? formId : this._pickForm();
+    const id = formId || this._pickForm();
     this.seed = (this.seed * 1664525 + 1013904223) >>> 0;
     const to = buildForm(id, this.N, this.seed);
     this.recent.push(id);

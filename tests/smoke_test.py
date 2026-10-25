@@ -43,7 +43,7 @@ with sync_playwright() as p:
 
     # --- theme registry & assets
     themes = page.evaluate("Array.from(document.querySelectorAll('.world-card')).map(c => c.dataset.id)")
-    check("14 world cards rendered", len(themes) == 14, themes)
+    check("15 world cards rendered", len(themes) == 15, themes)
     pool_sizes = page.evaluate("(async () => (await import('./js/theme-registry.js')).THEMES.map(t => t.hologram.forms.length))()")
     check("every world has 8+ holograms (6–7 originals + 2 new)", all(n >= 8 for n in pool_sizes), pool_sizes)
     local_fail = [u for u in failed if not any(d in u for d in EXTERNAL)]

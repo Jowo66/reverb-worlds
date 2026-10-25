@@ -94,7 +94,7 @@ with sync_playwright() as p:
     wait(pg, "(async()=>{const c=await caches.open('rw-audio-v1');return (await c.keys()).length>0})()", 20000)
     ctx.set_offline(True)
     pg.reload(); wait(pg, "window.__reverb && window.__reverb.engine.toForm")
-    check("6 · reloads fully offline from the cache", pg.evaluate("document.querySelectorAll('.world-card').length") == 14)
+    check("6 · reloads fully offline from the cache", pg.evaluate("document.querySelectorAll('.world-card').length") == 15)
     t0 = time.time(); pg.click("#pl-play"); wait(pg, "window.__reverb.player.state.playing", 20000); dt = time.time() - t0
     check("6 · cached REVERB Original plays without re-synthesising (offline)", pg.evaluate("window.__reverb.media.cacheHits") >= 1 and dt < 3, f"{dt:.2f}s")
     b.close()

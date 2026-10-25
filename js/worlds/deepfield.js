@@ -217,9 +217,10 @@ export const backdrop = {
     S.nebula = neb;
     S.twinkles = Array.from({ length: 16 }, () => ({ x: (rng() * w) | 0, y: (rng() * h) | 0, p: rng() * 6 }));
     S.rocks = Array.from({ length: 5 }, () => ({ x: rng() * w, y: h * (0.55 + rng() * 0.4), v: 0.6 + rng() * 1.4, s: 1 + ((rng() * 2) | 0) }));
-    const m = Math.min(w, h), r1 = Math.max(10, Math.round(0.22 * m)), r2 = Math.max(5, Math.round(0.09 * m));
-    S.terran = { r: r1, x: Math.round(w * 0.04) + r1 + 2, y: Math.round(h * 0.06) + r1 + 2 };
-    S.giant = { r: r2, x: Math.round(w * 0.86), y: Math.round(h * 0.16) + r2 };
+    // Inside the stage area (the side panels cover the screen corners on desktop).
+    const m = Math.min(w, h), r1 = Math.max(10, Math.round(0.16 * m)), r2 = Math.max(5, Math.round(0.065 * m));
+    S.terran = { r: r1, x: Math.max(r1 + 1, Math.round(w * 0.31)), y: Math.min(h - r1 - 1, Math.round(h * 0.64)) };
+    S.giant = { r: r2, x: Math.min(w - r2 * 2 - 1, Math.round(w * 0.67)), y: Math.max(r2 + 1, Math.round(h * 0.27)) };
     S.land = table(1.75, 8, 5);
     S.cloud = table(5.9, 6, 4);
     S.gas = table(2.3, 9, 4);

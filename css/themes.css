@@ -181,3 +181,11 @@
 [data-theme="aero"] .player, [data-theme="aero"] .topbar { background: linear-gradient(180deg, #ffffff 0%, #f0faff 48%, #def3ff 52%, #f0faff 100%); }
 /* The Info panel replaces the rotate hint while it's open. */
 .stage:has(.info-panel) .rotate-hint { visibility: hidden; }
+
+/* 15 Deep Field: pixel cosmos (crisp upscaled backdrop, hard pixel panels) */
+[data-theme="deepfield"] { font-variant-ligatures: none; }
+[data-theme="deepfield"] .backdrop { image-rendering: pixelated; }
+[data-theme="deepfield"] .btn { border-radius: 0; }
+[data-theme="deepfield"] .world-name { letter-spacing: .04em; text-shadow: 3px 3px 0 #000; }
+[data-theme="deepfield"] .panel { -webkit-backdrop-filter: none; backdrop-filter: none; } /* blur would smear the pixel art */
+[data-theme="deepfield"] .player, [data-theme="deepfield"] .topbar { background: var(--surface); }

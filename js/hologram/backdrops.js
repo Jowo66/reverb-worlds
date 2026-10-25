@@ -55,9 +55,8 @@ function softBlur(src, factor) {
   return out;
 }
 
-/* ====================================================================== */
 export const BACKDROPS = {
-  /* ------------------------------ 01 CYBERPUNK ------------------------ */
+  /* 01 CYBERPUNK */
   cyberpunk: {
     init(S) {
       const { w, h, rng } = S, hz = h * 0.64;
@@ -115,7 +114,7 @@ export const BACKDROPS = {
     },
   },
 
-  /* ------------------------------ 02 ART DECO ------------------------- */
+  /* 02 ART DECO */
   artdeco: {
     init(S) {
       const { w, h } = S, L = layer(w, h), c = L.getContext('2d');
@@ -161,7 +160,7 @@ export const BACKDROPS = {
     },
   },
 
-  /* ------------------------------ 03 CAVE ----------------------------- */
+  /* 03 CAVE */
   cave: {
     init(S) {
       const { w, h, rng } = S, L = layer(w, h), c = L.getContext('2d');
@@ -202,7 +201,7 @@ export const BACKDROPS = {
     },
   },
 
-  /* ------------------------------ 04 MOSAIC --------------------------- */
+  /* 04 MOSAIC */
   mosaic: {
     init(S) {
       const { w, h, rng, dpr } = S, L = layer(w, h), c = L.getContext('2d');
@@ -251,7 +250,7 @@ export const BACKDROPS = {
     },
   },
 
-  /* ------------------------------ 05 UKIYO-E -------------------------- */
+  /* 05 UKIYO-E */
   ukiyo: {
     init(S) {
       const { w, h, rng } = S, L = layer(w, h), c = L.getContext('2d');
@@ -301,7 +300,7 @@ export const BACKDROPS = {
     },
   },
 
-  /* ------------------------------ 06 BAROQUE -------------------------- */
+  /* 06 BAROQUE */
   baroque: {
     init(S) {
       const { w, h, rng } = S, L = layer(w, h), c = L.getContext('2d');
@@ -340,7 +339,7 @@ export const BACKDROPS = {
     },
   },
 
-  /* ------------------------------ 07 STREET ART ----------------------- */
+  /* 07 STREET ART */
   street: {
     init(S) {
       const { w, h, rng } = S, L = layer(w, h), c = L.getContext('2d');
@@ -388,7 +387,7 @@ export const BACKDROPS = {
     },
   },
 
-  /* ------------------------------ 08 VAPORWAVE ------------------------ */
+  /* 08 VAPORWAVE */
   vapor: {
     init(S) {
       const { w, h, rng } = S, hz = h * 0.62;
@@ -449,7 +448,7 @@ export const BACKDROPS = {
     },
   },
 
-  /* ------------------------------ 09 BRUTALIST ------------------------ */
+  /* 09 BRUTALIST */
   brutalist: {
     init(S) {
       const { w, h, rng } = S, L = layer(w, h), c = L.getContext('2d');
@@ -483,7 +482,7 @@ export const BACKDROPS = {
     },
   },
 
-  /* ------------------------------ 10 STAINED GLASS -------------------- */
+  /* 10 STAINED GLASS */
   stained: {
     init(S) {
       const { w, h, rng } = S, L = layer(w, h), c = L.getContext('2d');
@@ -544,7 +543,7 @@ export const BACKDROPS = {
     },
   },
 
-  /* ------------------------------ 11 DOUBLE EXPOSURE ------------------ */
+  /* 11 DOUBLE EXPOSURE */
   double: {
     init(S) {
       const { w, h, rng } = S;
@@ -580,7 +579,7 @@ export const BACKDROPS = {
     },
   },
 
-  /* ------------------------------ 12 TILT SHIFT ----------------------- */
+  /* 12 TILT SHIFT */
   tiltshift: {
     init(S) {
       const { w, h, rng } = S, L = layer(w, h), c = L.getContext('2d');
@@ -637,7 +636,7 @@ export const BACKDROPS = {
     },
   },
 
-  /* ------------------------------ 13 GLITCH ART ----------------------- */
+  /* 13 GLITCH ART */
   glitch: {
     init(S) {
       const { w, h, rng } = S;
@@ -671,7 +670,7 @@ export const BACKDROPS = {
     },
   },
 
-  /* ------------------------------ 14 FRUTIGER AERO -------------------- */
+  /* 14 FRUTIGER AERO */
   aero: {
     init(S) {
       const { w, h, rng } = S, L = layer(w, h), c = L.getContext('2d');
@@ -748,9 +747,7 @@ export const BACKDROPS = {
   },
 };
 
-/* ====================================================================== */
 /* Controller                                                              */
-/* ====================================================================== */
 export class Backdrop {
   constructor(canvas, { getReactive }) {
     this.canvas = canvas;
@@ -803,7 +800,7 @@ export class Backdrop {
     if (this.worker) {
       // Build the static layers in the worker; keep animating the old world until they arrive.
       this.pending = { seq, name, w, h, scale };
-      this.worker.postMessage({ type: 'init', seq, renderer: name, w, h, dpr: scale, glitch: this.opts.glitch });
+      this.worker.postMessage({ type: 'init', seq, renderer: name, pack: this.theme.pack || null, w, h, dpr: scale, glitch: this.opts.glitch });
       return;
     }
     this._install(name, w, h, scale, null);
@@ -866,7 +863,7 @@ export class Backdrop {
   }
 }
 
-/* ---------------- shared worker (null when unsupported → main-thread fallback) ---------------- */
+/* shared worker (null when unsupported → main-thread fallback) */
 let sharedWorker;
 function getWorker() {
   if (sharedWorker !== undefined) return sharedWorker;
@@ -897,7 +894,7 @@ export function requestThumbnail(theme, canvas, build) {
     canvas.dataset.thumb = data.cached ? 'cache' : 'worker';
   };
   w.addEventListener('message', onMsg);
-  w.postMessage({ type: 'thumb', id: theme.id, renderer: theme.background.renderer, w: canvas.width, h: canvas.height, build });
+  w.postMessage({ type: 'thumb', id: theme.id, renderer: theme.background.renderer, pack: theme.pack || null, w: canvas.width, h: canvas.height, build });
 }
 
 /** Static procedural thumbnail for a theme card (same renderers, tiny canvas). */

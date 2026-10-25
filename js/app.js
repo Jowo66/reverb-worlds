@@ -14,6 +14,7 @@ import { THEMES, getTheme, neighbourTheme } from './theme-registry.js';
 import { themeManager } from './theme-manager.js';
 import { HologramEngine } from './hologram/hologram-engine.js';
 import { Backdrop, requestThumbnail } from './hologram/backdrops.js';
+import { ensurePack } from './world-packs.js';
 import { BUILD } from './version.js';
 import { AudioAnalyser, AmbientSource } from './audio-analyser.js';
 import { PlayerController, formatTime, EMPTY_CAPS, EMPTY_STATE } from './player/player-adapter.js';
@@ -176,6 +177,7 @@ function worldFromHash() {
   return m && THEMES.some(t => t.id === m[1]) ? m[1] : null;
 }
 
+let worldSeq = 0, shownTheme = null;
 themeManager.addEventListener('change', e => {
   const { theme, source } = e.detail;
   $('#world-num').textContent = theme.num;
@@ -183,8 +185,14 @@ themeManager.addEventListener('change', e => {
   $('#world-tagline').textContent = theme.tagline;
   $('#world-mood').textContent = theme.mood;
   $('#world-total').textContent = String(THEMES.length);
-  engine.setTheme(theme);
-  backdrop.setTheme(theme);
+  // Pack worlds load their backdrop + forms first; the newest switch wins, a failed load reverts.
+  const seq = ++worldSeq, show = () => { engine.setTheme(theme); backdrop.setTheme(theme); shownTheme = theme; }, pending = ensurePack(theme);
+  if (!pending) show();
+  else pending.then(() => { if (seq === worldSeq) show(); }, () => {
+    if (seq !== worldSeq) return;
+    toast(`Couldn't load ${theme.name}. Check your connection and try again.`, 4000);
+    themeManager.apply((shownTheme || THEMES[0]).id, 'revert');
+  });
   document.querySelectorAll('.world-card').forEach(c => c.setAttribute('aria-pressed', String(c.dataset.id === theme.id)));
   const url = `${location.pathname}${location.search}#world=${theme.id}`;
   history.replaceState(null, '', url);
@@ -221,7 +229,8 @@ function buildWorldGrid() {
     for (const en of entries) {
       if (!en.isIntersecting) continue;
       const card = en.target; io.unobserve(card);
-      requestThumbnail(getTheme(card.dataset.id), card.querySelector('canvas'), BUILD);
+      const t = getTheme(card.dataset.id);
+      Promise.resolve(ensurePack(t)).then(() => requestThumbnail(t, card.querySelector('canvas'), BUILD), () => {});
     }
   }, { rootMargin: '200px' });
   grid.querySelectorAll('.world-card').forEach(c => io.observe(c));

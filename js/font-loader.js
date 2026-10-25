@@ -27,11 +27,13 @@
     "Nunito Sans": "Nunito+Sans:wght@400;700",
     "Orbitron": "Orbitron:wght@500;700",
     "Permanent Marker": "Permanent+Marker",
+    "Pixelify Sans": "Pixelify+Sans:wght@400;600",
     "Playfair Display": "Playfair+Display:wght@500;700",
     "Poiret One": "Poiret+One",
     "Rajdhani": "Rajdhani:wght@500;600;700",
     "Share Tech Mono": "Share+Tech+Mono",
     "Shippori Mincho": "Shippori+Mincho:wght@500;700",
+    "Silkscreen": "Silkscreen",
     "Source Sans 3": "Source+Sans+3:wght@400;600",
     "Space Grotesk": "Space+Grotesk:wght@400;500;700",
     "VT323": "VT323",
@@ -51,7 +53,8 @@
     "double": ["Cormorant Garamond", "Jost"],
     "tiltshift": ["DM Mono", "DM Sans"],
     "glitch": ["JetBrains Mono", "Major Mono Display", "VT323"],
-    "aero": ["DM Mono", "Nunito Sans", "Varela Round"]
+    "aero": ["DM Mono", "Nunito Sans", "Varela Round"],
+    "deepfield": ["Pixelify Sans", "Silkscreen", "VT323"]
   };
   var loaded = {};
   function href(names) {

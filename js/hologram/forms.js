@@ -14,9 +14,7 @@
 const TAU = Math.PI * 2;
 const PHI = (1 + Math.sqrt(5)) / 2;
 
-/* ------------------------------------------------------------------ */
 /* Seeded RNG                                                          */
-/* ------------------------------------------------------------------ */
 export function mulberry32(seed) {
   let a = seed >>> 0;
   return function () {
@@ -27,9 +25,7 @@ export function mulberry32(seed) {
   };
 }
 
-/* ------------------------------------------------------------------ */
 /* Path helpers                                                        */
-/* ------------------------------------------------------------------ */
 const P = (pts, opts = {}) => ({ pts, closed: false, ...opts });
 
 function circle(r, n = 64, { cx = 0, cy = 0, cz = 0, plane = 'xy', a0 = 0, a1 = TAU, wobble = 0, rng = null, closed = true, ...rest } = {}) {
@@ -194,10 +190,8 @@ function bipyramid(len, w, dir) {
   return rotY(paths, dir[2]);
 }
 
-/* ------------------------------------------------------------------ */
 /* Hand-authored silhouettes (coarse, smoothed at build time).         */
 /* Original drawings — not copied from any artwork.                    */
-/* ------------------------------------------------------------------ */
 const SIL = {
   bison: [[-0.95, 0.02], [-0.9, 0.2], [-0.76, 0.36], [-0.6, 0.56], [-0.34, 0.64], [-0.05, 0.46], [0.35, 0.4], [0.7, 0.35], [0.86, 0.2], [0.9, 0.0], [0.97, -0.18], [0.84, -0.06], [0.8, -0.2], [0.76, -0.62], [0.62, -0.62], [0.6, -0.26], [0.3, -0.2], [0.0, -0.26], [-0.25, -0.3], [-0.29, -0.66], [-0.43, -0.66], [-0.46, -0.3], [-0.6, -0.26], [-0.76, -0.18], [-0.86, -0.06]],
   hand: [[-0.3, -0.95], [-0.36, -0.4], [-0.62, -0.18], [-0.8, 0.02], [-0.7, 0.12], [-0.42, -0.04], [-0.4, 0.3], [-0.44, 0.84], [-0.3, 0.9], [-0.22, 0.32], [-0.17, 0.94], [-0.04, 0.98], [0.02, 0.32], [0.09, 0.86], [0.21, 0.86], [0.22, 0.26], [0.31, 0.64], [0.43, 0.6], [0.4, 0.04], [0.36, -0.4], [0.3, -0.95]],
@@ -212,12 +206,10 @@ function silhouette(key, { s = 1, flipX = false, closed = true, segs = 4, z = 0,
   return smooth(poly2(SIL[key], { s, flipX, closed, z, dx, dy, ...rest }), segs);
 }
 
-/* ------------------------------------------------------------------ */
 /* Form definitions                                                    */
-/* ------------------------------------------------------------------ */
 // Each build(rng, N) returns an array of paths.
 export const FORMS = {
-  /* ---------- Cyberpunk ---------- */
+  /* Cyberpunk */
   'neon-torus': { label: 'Neon torus', build: () => torus(0.66, 0.26, 18, 3) },
   'poly-core': { label: 'Polygonal core', build: () => [...edgesByMinDist(icosaVerts(0.92)), ...rotY(edgesByMinDist(icosaVerts(0.42)), 0.6)] },
   'frag-cube': { label: 'Fragmented cube', build: rng => fragmentCube(rng, 0.62) },
@@ -245,7 +237,7 @@ export const FORMS = {
     },
   },
 
-  /* ---------- Art Deco ---------- */
+  /* Art Deco */
   'faceted-crystal': {
     label: 'Faceted crystal', build: () => {
       const top = [0, 1.0, 0], bot = [0, -1.0, 0], r1 = [], r2 = [];
@@ -289,7 +281,7 @@ export const FORMS = {
     },
   },
 
-  /* ---------- Cave Drawings ---------- */
+  /* Cave Drawings */
   'sun-disc-rough': {
     label: 'Ochre sun', flat: true, build: rng => {
       const out = [circle(0.38, 40, { wobble: 0.06, rng })];
@@ -332,7 +324,7 @@ export const FORMS = {
     },
   },
 
-  /* ---------- Mosaic ---------- */
+  /* Mosaic */
   'tess-sphere': { label: 'Tessellated sphere', build: (rng, N) => [fibSphere(N, 0.88)] },
   'tile-torus': {
     label: 'Tile torus', build: (rng, N) => {
@@ -381,7 +373,7 @@ export const FORMS = {
     },
   },
 
-  /* ---------- Japanese Scroll ---------- */
+  /* Japanese Scroll */
   'wave-crest': {
     label: 'Wave crest', flat: true, build: () => {
       const body = smooth(poly2([[-1, -0.72], [-0.92, -0.22], [-0.62, 0.24], [-0.26, 0.58], [0.08, 0.76], [0.38, 0.72], [0.56, 0.56], [0.52, 0.38], [0.4, 0.32], [0.3, 0.42], [0.2, 0.4], [0.05, 0.24], [-0.04, 0.0], [0.1, -0.34], [0.5, -0.56], [1, -0.72]]), 4);
@@ -456,7 +448,7 @@ export const FORMS = {
     },
   },
 
-  /* ---------- Baroque ---------- */
+  /* Baroque */
   'bust': {
     label: 'Sculptural bust', flat: true, build: () => [
       silhouette('bust', { s: 0.95, z: 0.06 }),
@@ -505,7 +497,7 @@ export const FORMS = {
   },
   'carved-poly': { label: 'Carved polyhedron', build: () => [...edgesByMinDist(dodecaVerts(0.82)), ...edgesByMinDist(icosaVerts(0.4))] },
 
-  /* ---------- Street Art ---------- */
+  /* Street Art */
   'spray-ring': {
     label: 'Spray-painted ring', flat: true, build: rng => {
       const out = [];
@@ -542,7 +534,7 @@ export const FORMS = {
     },
   },
 
-  /* ---------- Vaporwave ---------- */
+  /* Vaporwave */
   'chrome-torus': { label: 'Chrome torus', build: () => torus(0.64, 0.3, 20, 4) },
   'wire-pyramid': {
     label: 'Wireframe pyramid', build: () => {
@@ -586,7 +578,7 @@ export const FORMS = {
     },
   },
 
-  /* ---------- Brutalist ---------- */
+  /* Brutalist */
   'monolith': {
     label: 'Concrete monolith', build: () => {
       const out = box(0, 0, 0, 0.6, 1.8, 0.38);
@@ -633,7 +625,7 @@ export const FORMS = {
     label: 'Shifting cuboid', build: () => [...box(0, 0, 0, 1.3, 1.0, 1.0), ...rotY(box(0, 0, 0, 0.8, 1.4, 0.6), 0.5), ...rotY(box(0, 0, 0, 0.4, 0.4, 1.5), -0.3)],
   },
 
-  /* ---------- Stained Glass ---------- */
+  /* Stained Glass */
   'rose-window': {
     label: 'Rose window', flat: true, build: () => {
       const out = [circle(0.96, 80, { nofill: true }), circle(0.28, 36)];
@@ -677,7 +669,7 @@ export const FORMS = {
     },
   },
 
-  /* ---------- Double Exposure ---------- */
+  /* Double Exposure */
   'human-silhouette': {
     label: 'Silhouette & forest', flat: true, build: rng => {
       const out = [silhouette('head', { s: 0.95, nofill: true })];
@@ -722,7 +714,7 @@ export const FORMS = {
     },
   },
 
-  /* ---------- Tilt Shift ---------- */
+  /* Tilt Shift */
   'mini-skyline': {
     label: 'Miniature skyline', build: rng => {
       const out = [P([[-1, -0.6, -0.5], [1, -0.6, -0.5], [1, -0.6, 0.5], [-1, -0.6, 0.5], [-1, -0.6, -0.5]])];
@@ -770,7 +762,7 @@ export const FORMS = {
     },
   },
 
-  /* ---------- Glitch Art ---------- */
+  /* Glitch Art */
   'pixel-sphere': { label: 'Pixel-sorted sphere', build: (rng, N) => [fibSphere(N, 0.86)] },
   'broken-wire': {
     label: 'Broken wireframe', build: rng => {
@@ -810,8 +802,8 @@ export const FORMS = {
     },
   },
 
-  /* ================= Added forms (2 per world + Frutiger Aero) ================= */
-  /* ---------- Cyberpunk ---------- */
+  /* Added forms (2 per world + Frutiger Aero) */
+  /* Cyberpunk */
   'neon-helix': {
     label: 'Neon double helix', build: () => {
       const out = [], a = [], b = [];
@@ -829,7 +821,7 @@ export const FORMS = {
       return out;
     },
   },
-  /* ---------- Art Deco ---------- */
+  /* Art Deco */
   'deco-skyscraper': {
     label: 'Deco skyscraper', flat: true, build: () => {
       const half = [[0.42, -1], [0.42, -0.2], [0.32, -0.2], [0.32, 0.2], [0.22, 0.2], [0.22, 0.5], [0.12, 0.5], [0.12, 0.72], [0.04, 0.72], [0, 1]];
@@ -848,7 +840,7 @@ export const FORMS = {
       return out;
     },
   },
-  /* ---------- Cave ---------- */
+  /* Cave */
   'spear-hunter': {
     label: 'Hunter with spear', flat: true, build: () => [
       circle(0.1, 16, { cx: -0.1, cy: 0.62 }),
@@ -866,7 +858,7 @@ export const FORMS = {
       return out;
     },
   },
-  /* ---------- Mosaic ---------- */
+  /* Mosaic */
   'tile-star': {
     label: 'Tessellated star', build: (rng, N) => {
       const pts = [];
@@ -881,7 +873,7 @@ export const FORMS = {
       return [{ pts, dots: true }];
     },
   },
-  /* ---------- Japanese Scroll ---------- */
+  /* Japanese Scroll */
   'mount-peak': {
     label: 'Mountain & mist', flat: true, build: () => {
       const out = [poly2([[-1, -0.6], [-0.15, 0.7], [0.05, 0.66], [0.15, 0.72], [1, -0.6]])];
@@ -896,7 +888,7 @@ export const FORMS = {
       return [body, poly2([[-0.82, 0], [-1, 0.32], [-0.92, 0], [-1, -0.32]]), poly2([[0.05, 0.28], [-0.1, 0.55], [-0.25, 0.25]]), circle(0.035, 8, { cx: 0.55, cy: 0.05 }), circle(0.12, 16, { cx: 0.1, cy: 0.02 }), circle(0.09, 14, { cx: -0.3, cy: -0.05 })];
     },
   },
-  /* ---------- Baroque ---------- */
+  /* Baroque */
   'cherub-wing': {
     label: 'Feathered wing', flat: true, build: () => {
       const out = [smooth(poly2([[-0.7, -0.1], [-0.3, 0.45], [0.2, 0.75], [0.8, 0.8], [0.5, 0.45], [0.75, 0.3], [0.4, 0.1], [0.6, -0.1], [0.2, -0.25], [0.35, -0.5], [-0.2, -0.4]]), 4)];
@@ -912,7 +904,7 @@ export const FORMS = {
       return out;
     },
   },
-  /* ---------- Street ---------- */
+  /* Street */
   'spray-can': {
     label: 'Spray can', flat: true, build: () => [
       poly2([[-0.28, -0.9], [0.28, -0.9], [0.28, 0.45], [0.18, 0.6], [-0.18, 0.6], [-0.28, 0.45]]),
@@ -928,7 +920,7 @@ export const FORMS = {
       circle(0.06, 10, { cx: -0.75, cy: 0.55 }), circle(0.06, 10, { cx: 0, cy: 0.7 }), circle(0.06, 10, { cx: 0.75, cy: 0.55 }),
     ],
   },
-  /* ---------- Vaporwave ---------- */
+  /* Vaporwave */
   'wire-dolphin': {
     label: 'Wireframe dolphin', flat: true, build: () => [
       smooth(poly2([[-0.95, 0.1], [-0.6, 0.35], [-0.1, 0.45], [0.15, 0.7], [0.2, 0.42], [0.55, 0.3], [0.85, 0.15], [0.98, 0.08], [0.85, 0.02], [0.55, -0.05], [0.2, -0.2], [0.0, -0.45], [-0.1, -0.15], [-0.6, -0.05], [-0.85, -0.25], [-0.8, 0.0]]), 3),
@@ -942,7 +934,7 @@ export const FORMS = {
       return out;
     },
   },
-  /* ---------- Brutalist ---------- */
+  /* Brutalist */
   'stair-block': {
     label: 'Concrete stair', build: () => {
       const out = [];
@@ -957,7 +949,7 @@ export const FORMS = {
       return out;
     },
   },
-  /* ---------- Stained Glass ---------- */
+  /* Stained Glass */
   'lancet-arch': {
     label: 'Lancet window', flat: true, build: () => {
       const out = [], arch = [];
@@ -979,7 +971,7 @@ export const FORMS = {
       return out;
     },
   },
-  /* ---------- Double Exposure ---------- */
+  /* Double Exposure */
   'stag-antlers': {
     label: 'Stag & antlers', flat: true, build: () => {
       const out = [smooth(poly2([[-0.18, 0.25], [-0.25, -0.1], [-0.12, -0.6], [0, -0.75], [0.12, -0.6], [0.25, -0.1], [0.18, 0.25], [0.32, 0.32], [0.18, 0.38], [0, 0.32], [-0.18, 0.38], [-0.32, 0.32]]), 3)];
@@ -997,7 +989,7 @@ export const FORMS = {
       return out;
     },
   },
-  /* ---------- Tilt Shift ---------- */
+  /* Tilt Shift */
   'hot-air-balloon': {
     label: 'Model hot-air balloon', build: () => {
       const out = [];
@@ -1017,7 +1009,7 @@ export const FORMS = {
       return out;
     },
   },
-  /* ---------- Glitch Art ---------- */
+  /* Glitch Art */
   'error-window': {
     label: 'Error window', flat: true, build: rng => {
       const out = [];
@@ -1035,7 +1027,7 @@ export const FORMS = {
     },
   },
 
-  /* ---------- 14 · Frutiger Aero ---------- */
+  /* 14 · Frutiger Aero */
   'aqua-bubbles': {
     label: 'Aqua bubbles', build: rng => {
       const out = [];
@@ -1126,9 +1118,7 @@ function fragmentCube(rng, s) {
   return out;
 }
 
-/* ------------------------------------------------------------------ */
 /* Resampling: paths → exactly N points                                */
-/* ------------------------------------------------------------------ */
 function pathLength(pts, closed) {
   let L = 0;
   for (let i = 1; i < pts.length; i++) L += dist(pts[i - 1], pts[i]);

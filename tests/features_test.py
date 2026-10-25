@@ -30,6 +30,7 @@ with sync_playwright() as p:
     startup = sum(os.path.getsize(ROOT / f) for f in local if f.endswith((".js", ".css")) and (ROOT / f).is_file())
     check(f"startup JS/CSS within {BUDGET_KB} KB budget", startup / 1024 <= BUDGET_KB, f"{startup / 1024:.1f} KB")
     lazy = [u for u in reqs if re.search(r"/features/(saved-panel|info-panel|tour|share|dev-overlay)\.js", u)]
+    check("no /worlds/ request at startup on the default world", not any("/js/worlds/" in u for u in reqs), [u for u in reqs if "/js/worlds/" in u])
     check("feature modules (incl. share) not downloaded at startup", not lazy, lazy)
 
     # ---- Experience format: validation & accessibility rules
@@ -214,6 +215,48 @@ with sync_playwright() as p:
     check("robot forms report upright", df["upright"] == [True, False], df["upright"])
     check("deepfield backdrop init+draw on OffscreenCanvas ≤ 3 ms/frame", df["ms"] < 3 and df["alpha"] > 0, f"{df['ms']:.2f} ms, alpha {df['alpha']}")
     dfp.context.close()
+
+    # ---- world packs: lazy loading, wiring, failure, cold start
+    PACK_FORM = "(id => /^(ship|robot|df)-/.test(id))"
+    def fresh(url=BASE):
+        c = b.new_context(viewport={"width": 1440, "height": 900}); p = c.new_page()
+        p.goto(url); wait(p, f"{R} && {R}.engine.toForm"); return c, p
+    wc, wp = fresh()
+    wp.evaluate(f"{R}.themeManager.apply('aero', 'user')")
+    wp.evaluate("document.querySelector('.world-card[data-id=\"deepfield\"]').click()")
+    wait(wp, f"{R}.engine.theme.id === 'deepfield' && {PACK_FORM}({R}.engine.toForm.id) && {R}.backdrop.theme.id === 'deepfield'", 15000); time.sleep(1)
+    px = wp.evaluate("(() => { const c = document.querySelector('canvas.backdrop') || document.querySelector('.backdrop canvas') || document.querySelector('.backdrop'); const x = document.createElement('canvas'); x.width = x.height = 1; x.getContext('2d').drawImage(c, c.width / 2, c.height / 2, 1, 1, 0, 0, 1, 1); return Array.from(x.getContext('2d').getImageData(0, 0, 1, 1).data); })()")
+    check("selecting Deep Field loads the pack and renders", sum(px[:3]) > 0, px)
+    wc.close()
+    wc, wp = fresh()
+    wp.evaluate(f"{R}.themeManager.apply('deepfield', 'user'); {R}.themeManager.apply('aero', 'user')"); time.sleep(1.5)
+    rs = wp.evaluate(f"[{R}.engine.theme.id, {R}.backdrop.theme.id, document.documentElement.dataset.theme]")
+    check("rapid switch ends on the last world", rs == ["aero", "aero", "aero"], rs)
+    wc.close()
+    wc, wp = fresh()
+    wp.evaluate(f"{R}.themeManager.apply('aero', 'user')")
+    wp.route("**/js/worlds/deepfield.js", lambda r: r.abort())
+    wp.evaluate(f"{R}.themeManager.apply('deepfield', 'user')"); time.sleep(2)
+    fl = wp.evaluate(f"[document.documentElement.dataset.theme, {R}.engine.theme.id, document.querySelector('#toast').textContent]")
+    check("pack failure reverts + toast", fl[0] == "aero" and fl[1] == "aero" and "Couldn't load Deep Field" in fl[2], fl)
+    wp.unroute("**/js/worlds/deepfield.js")
+    wp.evaluate(f"{R}.themeManager.apply('deepfield', 'user')")
+    try: wait(wp, f"{R}.engine.theme.id === 'deepfield'", 8000); ok = True
+    except Exception: ok = False
+    check("retry after failure loads", ok, wp.evaluate(f"{R}.engine.theme.id"))
+    wc.close()
+    wc, wp = fresh(BASE + "#world=deepfield&form=ship-omen")
+    try: wait(wp, f"{R}.engine.theme.id === 'deepfield' && {R}.engine.toForm.id === 'ship-omen'", 10000); ok = True
+    except Exception: ok = False
+    check("cold start via #world=deepfield&form=ship-omen", ok, wp.evaluate(f"[{R}.engine.theme && {R}.engine.theme.id, {R}.engine.toForm.id]"))
+    wc.close()
+    wc, wp = fresh()
+    wp.click("#nav-worlds")
+    wp.evaluate("document.querySelector('.world-card[data-id=\"deepfield\"]').scrollIntoView()")
+    try: wait(wp, "(() => { const c = document.querySelector('.world-card[data-id=\"deepfield\"] canvas'); return c && c.getContext('2d').getImageData(c.width / 2, c.height / 2, 1, 1).data[3] > 0; })()", 10000); ok = True
+    except Exception: ok = False
+    check("Deep Field thumbnail draws", ok)
+    wc.close()
 
     # ---- mobile layout still fits
     m = b.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True)
