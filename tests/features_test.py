@@ -258,6 +258,34 @@ with sync_playwright() as p:
     check("Deep Field thumbnail draws", ok)
     wc.close()
 
+    # ---- Deep Field pixel look: pixel-grid points, pixel-dissolve morph, upright robots, reactions
+    wc, wp = fresh(BASE + "#world=deepfield")
+    wait(wp, f"{R}.engine.theme && {R}.engine.theme.id === 'deepfield'")
+    wp.evaluate(f"{R}.settings.set('motion', 'full'); {R}.settings.set('reduceFlashing', false)"); time.sleep(0.3)
+    snap = wp.evaluate(f"""(() => {{ const E = {R}.engine; E.morph('ship-zenith'); E.t = 0.5; E._blend(new Float32Array(E.N * 3));
+      return {{ snap: E.transition.snap === true, binary: Array.from(E.prog.slice(0, E.N)).every(p => p === 0 || p === 1) }}; }})()""")
+    check("deepfield uses pixel-dissolve with snap", snap["snap"] and snap["binary"], snap)
+    wp.evaluate(f"{R}.engine.morph('robot-george')"); time.sleep(2.5)
+    t1 = wp.evaluate(f"{R}.engine.tiltNow")
+    wp.evaluate(f"{R}.engine.morph('ship-omen')"); time.sleep(2.5)
+    t2 = wp.evaluate(f"{R}.engine.tiltNow")
+    check("robot morph eases tilt toward upright", t1 is not None and t2 is not None and abs(t1 - 0.18) < 0.05 and abs(t2 - 0.45) < 0.05, [t1, t2])
+    wp.evaluate(f"{R}.settings.set('intensity', 0); {R}.engine.renderOnce()"); time.sleep(0.2)
+    hard = wp.evaluate("""(() => { const c = document.querySelector('#hologram'), x = c.getContext('2d');
+      const d = x.getImageData((c.width >> 1) - 60, (c.height >> 1) - 60, 120, 120).data; let soft = 0, lit = 0;
+      for (let i = 3; i < d.length; i += 4) { if (d[i] > 0) lit++; if (d[i] > 0 && d[i] < 153) soft++; }
+      return { lit, soft }; })()""")
+    check("pixel-grid draws hard-edged squares", hard["lit"] > 50 and hard["soft"] <= hard["lit"] * 0.02, hard)
+    wp.evaluate(f"{R}.settings.set('intensity', 70); {R}.settings.set('motion', 'reduced'); {R}.settings.set('reduceFlashing', true)"); time.sleep(0.3)
+    red = wp.evaluate(f"""(() => {{ const E = {R}.engine; E.morph(); E.effects.length = 0; E.lastFlash = -99; E._react('snare');
+      return {{ cross: E.transition.crossfade === true, still: {R}.backdrop.running === false, scan: E.effects.some(e => e.type === 'scan') }}; }})()""")
+    wp.evaluate(f"{R}.settings.set('motion', 'full')"); time.sleep(0.3)
+    fl = wp.evaluate(f"""(() => {{ const E = {R}.engine, scan = () => {{ E.effects.length = 0; E.lastFlash = -99; E._react('snare'); return E.effects.some(e => e.type === 'scan'); }};
+      const reduced = scan(); {R}.settings.set('reduceFlashing', false); return {{ reduced, normal: scan() }}; }})()""")
+    red["fullReduced"] = fl["reduced"]; red["fullNormal"] = fl["normal"]
+    check("deepfield reduced: crossfade + still backdrop + no flash", red["cross"] and red["still"] and not red["scan"] and not fl["reduced"] and fl["normal"], red)
+    wc.close()
+
     # ---- mobile layout still fits
     m = b.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True)
     mp = m.new_page(); mp.goto(BASE); wait(mp, f"{R} && {R}.engine.toForm"); time.sleep(1)

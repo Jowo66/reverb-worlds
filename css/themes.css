@@ -6,7 +6,7 @@
  * contrast-reducing strength, and core controls keep conventional shapes.
  */
 
-/* ============ 01 CYBERPUNK ============ */
+/* 01 CYBERPUNK */
 [data-theme="cyberpunk"] .wordmark,
 [data-theme="cyberpunk"] .world-name { text-shadow: 0 0 10px rgba(255,62,201,.55), 0 0 22px rgba(52,223,255,.25); }
 [data-theme="cyberpunk"] .panel { border-image: linear-gradient(135deg, rgba(52,223,255,.8), rgba(255,62,201,.6)) 1; border-radius: 0; }
@@ -24,7 +24,7 @@
 }
 @keyframes cp-glitch { 0% { text-shadow: 2px 0 #ff3ec9, -2px 0 #34dfff; } 50% { transform: translateX(1px); } 100% { transform: none; } }
 
-/* ============ 02 ART DECO ============ */
+/* 02 ART DECO */
 [data-theme="artdeco"] .world-name,
 [data-theme="artdeco"] .wordmark { text-transform: uppercase; letter-spacing: .14em; background: linear-gradient(180deg, #fff3cf 0%, #e6c88a 45%, #b48a45 60%, #f1d79b 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
 [data-theme="artdeco"] .wordmark span { color: transparent; }
@@ -40,7 +40,7 @@
 [data-theme="artdeco"] .btn-play .icon { transform: rotate(-45deg); }
 [data-theme="artdeco"] .world-card { border-radius: 0; }
 
-/* ============ 03 CAVE DRAWINGS ============ */
+/* 03 CAVE DRAWINGS */
 [data-theme="cave"] .world-name { font-size: clamp(40px, 5vw, 64px); letter-spacing: .04em; color: #f2c89a; }
 [data-theme="cave"] .wordmark { font-family: var(--font-body); font-weight: 800; }
 [data-theme="cave"] .section-label { font-family: var(--font-body); font-weight: 800; }
@@ -49,7 +49,7 @@
 [data-theme="cave"] .btn { border-radius: 14px 8px 16px 10px; border-width: 2px; }
 [data-theme="cave"] .btn-play { border-radius: 50% 46% 52% 48%; }
 
-/* ============ 04 MOSAIC ============ */
+/* 04 MOSAIC */
 [data-theme="mosaic"] .panel {
   border-image: repeating-linear-gradient(90deg, #2a5bd7 0 9px, #0b1430 9px 10px, #d6334f 10px 19px, #0b1430 19px 20px, #f2a93b 20px 29px, #0b1430 29px 30px, #21a67a 30px 39px, #0b1430 39px 40px, #33c9c4 40px 49px, #0b1430 49px 50px) 6;
   border-radius: 0;
@@ -59,7 +59,7 @@
 [data-theme="mosaic"] .stage { background: radial-gradient(ellipse at 50% 50%, rgba(11,20,48,.86) 0 55%, rgba(11,20,48,.6) 100%); }
 [data-theme="mosaic"] .world-card[aria-pressed="true"] { box-shadow: 0 0 0 3px #f2a93b inset; }
 
-/* ============ 05 JAPANESE SCROLL ============ */
+/* 05 JAPANESE SCROLL */
 [data-theme="ukiyo"] { color-scheme: light; --focus: 3px solid #1b2232; }
 [data-theme="ukiyo"] .backdrop-scrim { background: radial-gradient(ellipse at 50% 40%, rgba(255,255,255,0), rgba(239,229,207,.25)); }
 [data-theme="ukiyo"] .panel { background-image: linear-gradient(rgba(255,255,255,.25), rgba(255,255,255,0)); }
@@ -69,7 +69,7 @@
 [data-theme="ukiyo"] .btn-flat { border-width: 2px; }
 [data-theme="ukiyo"] .stage { background: rgba(248,241,223,.35); }
 
-/* ============ 06 BAROQUE ============ */
+/* 06 BAROQUE */
 [data-theme="baroque"] .world-name { font-style: italic; color: #e8c477; text-shadow: 0 2px 18px rgba(0,0,0,.8); }
 [data-theme="baroque"] .wordmark { font-style: italic; letter-spacing: .08em; }
 [data-theme="baroque"] .section-label { font-family: var(--font-body); font-style: italic; letter-spacing: .12em; font-size: 15px; }
@@ -77,7 +77,7 @@
 [data-theme="baroque"] .stage { background: radial-gradient(ellipse at 40% 30%, rgba(255,207,122,.06), rgba(0,0,0,.35) 70%); }
 [data-theme="baroque"] .backdrop-scrim { background: radial-gradient(ellipse at 45% 40%, rgba(0,0,0,0) 0%, rgba(0,0,0,.55) 100%); }
 
-/* ============ 07 STREET ART ============ */
+/* 07 STREET ART */
 [data-theme="street"] .world-name { color: var(--primary); transform: rotate(-2deg); transform-origin: left; text-shadow: 3px 3px 0 #ff3b30; }
 [data-theme="street"] .wordmark { font-family: var(--font-display); font-weight: 400; }
 [data-theme="street"] .world-intro { position: relative; }
@@ -87,14 +87,14 @@
 [data-theme="street"] .btn-accent, [data-theme="street"] .btn-play { border-color: #111; box-shadow: 3px 3px 0 #111; }
 [data-theme="street"] .stage { background: rgba(18,18,18,.25); }
 
-/* ============ 08 VAPORWAVE ============ */
+/* 08 VAPORWAVE */
 [data-theme="vapor"] .world-name, [data-theme="vapor"] .wordmark { background: linear-gradient(90deg, #ff71ce, #b967ff 50%, #01cdfe); -webkit-background-clip: text; background-clip: text; color: transparent; }
 [data-theme="vapor"] .wordmark span { color: transparent; }
 [data-theme="vapor"] .world-tagline, [data-theme="vapor"] .chip, [data-theme="vapor"] .world-num, [data-theme="vapor"] .time { font-size: 18px; }
 [data-theme="vapor"] .section-label::after { content: " ▒"; color: var(--secondary); }
 [data-theme="vapor"] .btn-play { background: linear-gradient(135deg, #ff71ce, #01cdfe); border: 0; }
 
-/* ============ 09 BRUTALIST ============ */
+/* 09 BRUTALIST */
 [data-theme="brutalist"] { color-scheme: light; --focus: 4px solid #ff5a1f; }
 [data-theme="brutalist"] .backdrop-scrim { background: none; }
 [data-theme="brutalist"] .world-name { text-transform: uppercase; font-size: clamp(26px, 2.9vw, 50px); letter-spacing: -.01em; }
@@ -108,7 +108,7 @@
 [data-theme="brutalist"] .stage { background: rgba(231,229,223,.3); }
 [data-theme="brutalist"] .tab[aria-selected="true"] { border-bottom-width: 5px; }
 
-/* ============ 10 STAINED GLASS ============ */
+/* 10 STAINED GLASS */
 [data-theme="stained"] .panel { box-shadow: var(--panel-shadow), inset 0 0 0 1px rgba(232,176,48,.25); }
 [data-theme="stained"] .world-name { color: #f0c254; letter-spacing: .06em; }
 [data-theme="stained"] .world-intro { background-image: radial-gradient(circle at 100% 0%, rgba(59,123,224,.18), transparent 50%), radial-gradient(circle at 0% 100%, rgba(208,54,86,.15), transparent 50%); }
@@ -116,7 +116,7 @@
 [data-theme="stained"] .btn { border-width: 2px; border-color: #3d3550; }
 [data-theme="stained"] .btn:hover { border-color: var(--primary); }
 
-/* ============ 11 DOUBLE EXPOSURE ============ */
+/* 11 DOUBLE EXPOSURE */
 [data-theme="double"] { color-scheme: light; --focus: 3px solid #1d2824; }
 [data-theme="double"] .backdrop-scrim { background: radial-gradient(ellipse at 40% 40%, rgba(243,242,236,0), rgba(243,242,236,.35)); }
 [data-theme="double"] .world-name { font-style: italic; font-weight: 500; font-size: clamp(34px, 4vw, 54px); }
@@ -124,7 +124,7 @@
 [data-theme="double"] .btn { border-radius: 999px; }
 [data-theme="double"] .stage { background: rgba(243,242,236,.35); }
 
-/* ============ 12 TILT SHIFT ============ */
+/* 12 TILT SHIFT */
 [data-theme="tiltshift"] { color-scheme: light; --focus: 3px solid #2b8fd0; }
 [data-theme="tiltshift"] .backdrop-scrim { background: none; }
 [data-theme="tiltshift"] .world-name { font-weight: 700; letter-spacing: -.02em; }
@@ -135,7 +135,7 @@
 [data-theme="tiltshift"] .stage { background: radial-gradient(ellipse at 50% 50%, rgba(251,250,244,.72) 0 50%, rgba(251,250,244,.4) 100%); }
 [data-theme="tiltshift"] .player-progress .range::-webkit-slider-runnable-track { background: repeating-linear-gradient(90deg, var(--primary) 0 6px, transparent 6px 9px) 0 0 / var(--pct) 100% no-repeat, rgba(26,35,48,.2); }
 
-/* ============ 13 GLITCH ART ============ */
+/* 13 GLITCH ART */
 [data-theme="glitch"] .world-name { text-shadow: 2px 0 rgba(255,43,214,.75), -2px 0 rgba(0,229,255,.75); letter-spacing: .02em; }
 [data-theme="glitch"] .wordmark { font-family: var(--font-display); }
 [data-theme="glitch"] .section-label::before { content: "> "; color: var(--primary); }
@@ -146,7 +146,7 @@
 /* Light worlds: tone down the generic dark scrim, keep panels opaque for contrast. */
 [data-theme="ukiyo"] .panel, [data-theme="double"] .panel, [data-theme="tiltshift"] .panel, [data-theme="brutalist"] .panel { -webkit-backdrop-filter: none; backdrop-filter: none; }
 
-/* ============ 14 FRUTIGER AERO ============ */
+/* 14 FRUTIGER AERO */
 [data-theme="aero"] { color-scheme: light; --focus: 3px solid #0a6fc2; }
 [data-theme="aero"] .backdrop-scrim { background: none; }
 [data-theme="aero"] .panel {

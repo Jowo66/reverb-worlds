@@ -31,7 +31,7 @@ const hasSpotifySession = () => { try { return !!sessionStorage.getItem('rw:spot
 const $ = sel => document.querySelector(sel);
 const root = document.documentElement;
 
-/* ---- Toast ---- */
+/* Toast */
 let toastTimer;
 function toast(msg, ms = 3200, action = null) {
   const el = $('#toast');
@@ -48,7 +48,7 @@ function toast(msg, ms = 3200, action = null) {
 
 const clientId = () => settings.get('spotifyClientId') || SPOTIFY_CLIENT_ID;
 
-/* ---- Audio input + player ---- */
+/* Audio input + player */
 const analyser = new AudioAnalyser();
 const ambient = new AmbientSource();
 const player = new PlayerController();
@@ -71,7 +71,7 @@ const sdk = player.register(lazyProvider({
   events: ['state', 'needs-selection'],
 }));
 
-/* ---- Visualizer input resolution (honest labelling) ---- */
+/* Visualizer input resolution (honest labelling) */
 let vizMode = 'ambient';
 function resolveVizMode() {
   const pref = settings.get('vizInput');
@@ -115,7 +115,7 @@ function getFeatures() {
   return analyser.read(now);
 }
 
-/* ---- Hologram + backdrop ---- */
+/* Hologram + backdrop */
 const engine = new HologramEngine($('#hologram'), {
   getFeatures,
   onForm: ({ label }) => {
@@ -138,7 +138,7 @@ const backdrop = new Backdrop($('#backdrop'), { getReactive: () => engine.reacti
 function visualsActive() { return !visualsPaused && settings.get('motion') !== 'static' && !document.hidden; }
 let visualsPaused = false;
 
-/* ---- covered / off-screen throttling ----
+/* covered / off-screen throttling
  * Sheets and dialogs that cover the stage cut the hologram to ~8 fps and the
  * backdrop to 5 fps; when the stage is scrolled out of view the hologram stops. */
 let stageVisible = true;
@@ -171,7 +171,7 @@ function syncRunning() {
 
 document.addEventListener('visibilitychange', syncRunning);
 
-/* ---- Worlds ---- */
+/* Worlds */
 function worldFromHash() {
   const m = /world=([a-z]+)/.exec(location.hash);
   return m && THEMES.some(t => t.id === m[1]) ? m[1] : null;
@@ -236,7 +236,7 @@ function buildWorldGrid() {
   grid.querySelectorAll('.world-card').forEach(c => io.observe(c));
 }
 
-/* ---- Auto-morph / auto-world scheduler ---- */
+/* Auto-morph / auto-world scheduler */
 let lastMorph = performance.now(), lastWorld = performance.now();
 setInterval(() => {
   const now = performance.now();
@@ -249,7 +249,7 @@ setInterval(() => {
   }
 }, 250);
 
-/* ---- Player UI ---- */
+/* Player UI */
 const ui = {
   play: $('#pl-play'), prev: $('#pl-prev'), next: $('#pl-next'), shuffle: $('#pl-shuffle'), repeat: $('#pl-repeat'),
   seek: $('#pl-seek'), elapsed: $('#pl-elapsed'), total: $('#pl-total'), mute: $('#pl-mute'), volume: $('#pl-volume'),
@@ -387,7 +387,7 @@ if ('mediaSession' in navigator) {
   h('seekto', d => player.seek(d.seekTime));
 }
 
-/* ---- Library sheet, tabs and sources ---- */
+/* Library sheet, tabs and sources */
 const sheetMQ = window.matchMedia('(max-width: 1100px)');
 function openLibrary(open, tab) {
   queueMicrotask(updateCoverage);
@@ -423,7 +423,7 @@ for (const t of TABS) {
   });
 }
 
-/* ---------------- v1.1: favourites, experiences, lazy feature modules ---------------- */
+/* v1.1: favourites, experiences, lazy feature modules */
 const xctx = () => ({ engine, media, player, settings, themeManager, ambient });
 function toggleFav(kind, id, label) {
   const on = X.favs.toggle(kind, id);
@@ -462,7 +462,7 @@ function loadFeature(name) {
 $('#btn-info').addEventListener('click', () => loadFeature('info-panel').then(m => m.toggle()));
 $('#btn-tour').addEventListener('click', () => loadFeature('tour').then(m => m.start()));
 
-/* ---------------- Continue Last Session ----------------
+/* Continue Last Session
  * The current Experience (+ track position) is auto-saved; on the next visit
  * the world, shape and view come back and the track is cued, paused at the
  * same spot, with a Resume prompt (browsers don't allow autoplay). */
@@ -549,7 +549,7 @@ function updateSdkUi() {
 }
 $('#sdk-login').addEventListener('click', () => sdk.login());
 
-/* ---------------- Spotify search & playlists: lazy (features/spotify-ui.js) ---------------- */
+/* Spotify search & playlists: lazy (features/spotify-ui.js) */
 let spotifyUi = null;
 const loadSpotifyUi = () => loadFeature('spotify-ui').then(m => (spotifyUi = m));
 sdk.addEventListener('needs-selection', () => loadSpotifyUi().then(m => m.onNeedsSelection()));
@@ -594,7 +594,7 @@ $('#tab-toggle').addEventListener('click', async () => {
   }
 });
 
-/* ---------------- Tap tempo (beat clock) ---------------- */
+/* Tap tempo (beat clock) */
 let taps = [];
 function tapTempo() {
   const now = performance.now();
@@ -611,7 +611,7 @@ function tapTempo() {
 $('#btn-tap').addEventListener('click', tapTempo);
 $('#btn-tap-clear').addEventListener('click', () => { ambient.clearTempo(); taps = []; updateVizChip.done = false; updateVizChip(); toast('Beat clock cleared.'); });
 
-/* ---- Stage controls ---- */
+/* Stage controls */
 $('#btn-morph').addEventListener('click', () => { engine.morph(); onsetCount = 0; });
 function syncToggles() {
   $('#btn-automorph').setAttribute('aria-pressed', String(settings.get('autoMorph')));
@@ -628,7 +628,7 @@ $('#world-prev').addEventListener('click', () => themeManager.apply(neighbourThe
 $('#world-next').addEventListener('click', () => themeManager.apply(neighbourTheme(themeManager.current.id, 1).id));
 $('#nav-worlds').addEventListener('click', () => { const w = $('#worlds-panel'); w.scrollIntoView({ behavior: settings.get('motion') === 'full' ? 'smooth' : 'auto', block: 'start' }); w.focus({ preventScroll: true }); });
 
-/* ---- Search ---- */
+/* Search */
 function applySearch() {
   const q = $('#search').value.trim().toLowerCase();
   let shown = 0;
@@ -653,7 +653,7 @@ $('#search-form').addEventListener('submit', e => {
   toast(worlds.length ? `${worlds.length} worlds match — pick one below.` : 'No worlds or tracks match.');
 });
 
-/* ---- Settings dialog ---- */
+/* Settings dialog */
 const dlg = $('#settings');
 function fillSettings() {
   dlg.querySelectorAll('input[name="motion"]').forEach(r => { r.checked = r.value === settings.get('motion'); });
@@ -708,7 +708,7 @@ try {
   window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', e => settings.set('motion', e.matches ? 'reduced' : 'full'));
 } catch {}
 
-/* ---- Keyboard ---- */
+/* Keyboard */
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     if (features.tour) features.tour.then(m => m.stop?.('esc'));
@@ -743,7 +743,7 @@ document.addEventListener('keydown', e => {
 const SHARE_RE = /[#&](form|src|i|rx|bpm)=/;
 window.addEventListener('hashchange', () => { if (SHARE_RE.test(location.hash)) loadFeature('share').then(m => m.open(location.hash)); else { const w = worldFromHash(); if (w) themeManager.apply(w, 'url'); } });
 
-/* ---- Boot ---- */
+/* Boot */
 async function boot() {
   // Complete a Spotify PKCE login if we were redirected back from Spotify.
   // Only pull in the PKCE helpers when Spotify has actually redirected back here.
@@ -776,7 +776,7 @@ async function boot() {
   // Expose a tiny debug/test surface (no secrets, no playback internals).
   window.__reverb = { engine, backdrop, player, themeManager, settings, analyser, media, embed, sdk, experience: X, loadFeature };
 }
-/* ---------------- offline cache (sw.js) ----------------
+/* offline cache (sw.js)
  * Registered on deployed builds (or locally with ?sw=1). A new deploy waits
  * in the background; the user chooses when to switch, so one session never
  * mixes old and new files. */

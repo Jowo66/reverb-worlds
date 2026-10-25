@@ -53,6 +53,7 @@ const TRANSITIONS = {
   'crossfade': { crossfade: true, ease: 'inOutSine' },
   'focus-pull': { delay: () => 0, spread: 0, ease: 'inOutCubic', defocus: true },
   'bubble-float': { delay: (x, y, z, i, n, r) => (1 - (y + 1) / 2) * 0.6 + r * 0.4, spread: 0.6, ease: 'inOutSine', float: 0.35 },
+  'pixel-dissolve': { delay: (x, y, z, i) => (i * 0.618034) % 1, spread: 0.9, ease: 'linear', snap: true },
   'pixel-sort': { delay: (x, y, z, i, n, r) => Math.floor(clamp((x + 1) / 2, 0, 0.999) * 10) / 10 * 0.8 + r * 0.2, spread: 0.55, ease: 'inOutCubic', quantize: 0.12, sort: true },
 };
 
@@ -94,7 +95,7 @@ export class HologramEngine {
     this._bindPointer();
   }
 
-  /* ---------------- grab & rotate ---------------- */
+  /* grab & rotate */
   _bindPointer() {
     const c = this.canvas, u = this.user;
     c.addEventListener('pointerdown', e => {
@@ -161,9 +162,7 @@ export class HologramEngine {
     return { n, x: new Float32Array(n), y: new Float32Array(n), vx: new Float32Array(n), vy: new Float32Array(n), life: new Float32Array(n), max: new Float32Array(n), size: new Float32Array(n), col: new Uint8Array(n), kind: new Uint8Array(n), alive: 0, acc: 0 };
   }
 
-  /* ---------------------------------------------------------------- */
   /* Public API                                                        */
-  /* ---------------------------------------------------------------- */
   setOptions(o) {
     const qualityChanged = 'quality' in o && o.quality !== this._lastQuality;
     Object.assign(this.opts, o);
@@ -181,6 +180,7 @@ export class HologramEngine {
     this.mat = h.material;
     this.transitionName = h.transition;
     this.pool = h.forms;
+    this.tiltNow = h.motion.tilt || 0;
     this.recent = [];
     this.effects.length = 0;
     this.particles.alive = 0;
@@ -255,9 +255,7 @@ export class HologramEngine {
 
   destroy() { this.stop(); this._resizeObs.disconnect(); }
 
-  /* ---------------------------------------------------------------- */
   /* Internals                                                         */
-  /* ---------------------------------------------------------------- */
   _pickForm() {
     const choices = this.pool.filter(f => !this.recent.includes(f) && f !== this.toForm?.id);
     const list = choices.length ? choices : this.pool.filter(f => f !== this.toForm?.id);
@@ -305,6 +303,7 @@ export class HologramEngine {
     for (let i = 0; i < N; i++) {
       let p = tr.crossfade ? T : clamp((Tq - this.delays[i] * spread) / (1 - spread || 1));
       p = ease(p);
+      if (tr.snap) p = p >= 0.5 ? 1 : 0; // each point jumps at its own moment
       if (writeProg) this.prog[i] = p;
       const k = i * 3;
       let x = lerp(a[k], b[k], p), y = lerp(a[k + 1], b[k + 1], p), z = lerp(a[k + 2], b[k + 2], p);
@@ -401,8 +400,11 @@ export class HologramEngine {
     }
     const sway = mot.sway ?? 0.2;
     let ry = flat ? Math.sin(this.time * 0.35) * (sway + 0.15) * motionK : this.rotY;
-    let rx = flat ? Math.sin(this.time * 0.27) * sway * 0.6 * motionK : (mot.tilt || 0) + Math.sin(this.time * 0.21) * 0.08 * motionK;
-    if (motion === 'static') { ry = flat ? 0 : 0.6; rx = flat ? 0 : (mot.tilt || 0.3); }
+    // Upright forms (robots) ease toward a near-level view.
+    const tiltTo = this.toForm?.upright ? 0.18 : (mot.tilt || 0);
+    this.tiltNow += (tiltTo - this.tiltNow) * Math.min(1, dt * 3);
+    let rx = flat ? Math.sin(this.time * 0.27) * sway * 0.6 * motionK : this.tiltNow + Math.sin(this.time * 0.21) * 0.08 * motionK;
+    if (motion === 'static') { ry = flat ? 0 : 0.6; rx = flat ? 0 : (this.toForm?.upright ? 0.18 : (mot.tilt || 0.3)); }
     ry += u.ry; rx = clamp(rx + u.rx, -1.5, 1.5);
     const cY = Math.cos(ry), sY = Math.sin(ry), cX = Math.cos(rx), sX = Math.sin(rx);
 
@@ -437,7 +439,7 @@ export class HologramEngine {
     ctx.globalAlpha = 1;
     ctx.clearRect(0, 0, W, H);
 
-    this._drawHalo(sm, R);
+    if (this.mat.halo !== false) this._drawHalo(sm, R);
 
     const tr = this.transition;
     if (tr.crossfade && this.t < 1) {
@@ -458,7 +460,7 @@ export class HologramEngine {
     if (tr.scanline && this.t < 1 && motion === 'full') this._drawScanFront();
   }
 
-  /* ---------------- drawing ---------------- */
+  /* drawing */
 
   _color(i, ci) {
     const cols = this.mat.colors;
@@ -698,6 +700,20 @@ export class HologramEngine {
       }
       return;
     }
+    if (style === 'pixel-grid') {
+      // Deep Field: hard squares snapped to a coarse grid; linked points are joined by stepped pixel lines.
+      const g = (mat.grid || 3) * dpr, q = v => Math.round(v / g) * g;
+      ctx.globalAlpha = baseAlpha;
+      for (let i = 0; i < N; i++) {
+        ctx.fillStyle = mat.colors[C[i]];
+        let x = q(sx[i]), y = q(sy[i]);
+        ctx.fillRect(x, y, g, g);
+        if (!to.link[i] || i + 1 >= N) continue;
+        const x1 = q(sx[i + 1]), y1 = q(sy[i + 1]), steps = Math.min(64, Math.max(Math.abs(x1 - x), Math.abs(y1 - y)) / g);
+        for (let k = 1; k < steps; k++) ctx.fillRect(q(x + (x1 - x) * k / steps), q(y + (y1 - y) * k / steps), g, g);
+      }
+      return;
+    }
     if (style === 'glint') {
       ctx.fillStyle = mat.colors[3] || '#fff'; ctx.globalAlpha = clamp(baseAlpha * 0.8);
       for (let i = 0; i < N; i += 3) ctx.fillRect(sx[i] - size / 2, sy[i] - size / 2, size, size);
@@ -756,7 +772,7 @@ export class HologramEngine {
     return { top: c - half, bottom: c + half };
   }
 
-  /* ---------------- reactions ---------------- */
+  /* reactions */
 
   _flashK() {
     let k = this.opts.reduceFlashing ? 0.35 : 1;
@@ -780,7 +796,7 @@ export class HologramEngine {
     };
     const add = e => this.effects.push({ t: 0, ...e });
     switch (name) {
-      // ---- kick ----
+      // kick
       case 'bloom-pulse': this.env.pulse = 1; if (flashOk()) add({ type: 'flash', life: 0.25, color: P.primary, alpha: 0.32 * I }); break;
       case 'sunburst': this.env.pulse = 0.6; add({ type: 'ring', life: 0.9, color: '#f6dfa6', width: 1.4, from: 0.3, to: 1.25 }); add({ type: 'ring', life: 1.1, color: '#d9b36c', width: 1, from: 0.2, to: 1.05 }); add({ type: 'rays', life: 0.7, color: '#f6dfa6', count: 16 }); break;
       case 'pigment-stamp': this.env.pulse = 0.5; add({ type: 'ring', life: 1.0, color: '#c0533a', width: 5, from: 0.4, to: 1.2, rough: true }); add({ type: 'ring', life: 1.3, color: '#e0954a', width: 3, from: 0.2, to: 1.0, rough: true }); break;
@@ -795,7 +811,7 @@ export class HologramEngine {
       case 'focus-ripple': this.env.focus = 0; break;
       case 'bubble-pop': this.env.pulse = 0.5; add({ type: 'ring', life: 0.7, color: '#7fd8ff', width: 2, from: 0.2, to: 1.1, soft: true }); this._burst('bubble', 6, 0.5); break;
       case 'band-displace': if (full) this.env.displace = 1 * g; this.env.pulse = 0.4; break;
-      // ---- snare ----
+      // snare
       case 'rgb-scan': if (full) { this.env.rgb = 0.8 * g; add({ type: 'scan', life: 0.35, color: '#34dfff' }); } break;
       case 'mirror-flash': this.env.mirror = 1; add({ type: 'vline', life: 0.3, color: '#fff4d6' }); break;
       case 'dust-burst': this._burst('dust', 14, 0.6); break;
@@ -809,6 +825,9 @@ export class HologramEngine {
       case 'exposure-flash': this.env.edge = 1; if (flashOk()) add({ type: 'flash', life: 0.35, color: '#fff8e6', alpha: 0.2 * I }); break;
       case 'camera-flash': if (flashOk()) add({ type: 'flash', life: 0.18, color: '#ffffff', alpha: 0.28 * I, r: 0.5 }); break;
       case 'gloss-sheen': add({ type: 'sheen', life: 0.6 }); break;
+      case 'pixel-shockwave': add({ type: 'ring', life: 0.7, color: '#ffb454', width: 2, from: 0.2, to: 1.25, dashed: true }); this.env.pulse = 0.6; break;
+      case 'scanline-flash': if (!this.opts.reduceFlashing && flashOk()) add({ type: 'scan', life: 0.35, color: '#5fe1d6' }); else this.env.pulse = 0.3; break;
+      case 'star-sparks': this._burst('glint', 8, 0.8); break;
       case 'channel-split': if (full) this.env.rgb = 1.4 * g; this._burst('pixel', 10, 0.8); break;
       default: break;
     }
@@ -921,7 +940,7 @@ export class HologramEngine {
     ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
   }
 
-  /* ---------------- particles ---------------- */
+  /* particles */
   _burst(kind, n, speed) {
     const P = this.particles, cap = QUALITY[this.qualityTier].particles;
     const K = KINDS[kind] ?? 0;

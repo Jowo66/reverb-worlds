@@ -1,4 +1,4 @@
-/* ---------------------------------------------------------------- base */
+/* base */
 html, body { height: 100%; }
 body {
   background: var(--bg);
@@ -34,7 +34,7 @@ body {
 
 :focus-visible { outline: var(--focus); outline-offset: 2px; }
 
-/* ---------------------------------------------------------------- panels */
+/* panels */
 .panel {
   background: rgba(var(--surface-rgb), var(--surface-alpha));
   border: var(--panel-border-width) solid var(--border);
@@ -46,7 +46,7 @@ body {
   html[data-quality="low"] .panel, html[data-blur="off"] .panel { -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 
-/* ---------------------------------------------------------------- top bar */
+/* top bar */
 .topbar {
   position: sticky; top: 0; z-index: 20;
   display: grid; grid-template-columns: auto minmax(160px, 420px) auto; align-items: center; justify-content: space-between;
@@ -62,7 +62,7 @@ body {
 .wordmark span { color: var(--primary-ink); }
 .topnav { display: flex; gap: 6px; }
 
-/* ---------------------------------------------------------------- main grid */
+/* main grid */
 .main {
   max-width: 1680px; margin: 0 auto;
   padding: var(--gap) var(--gap) calc(var(--player-h) + var(--gap) * 2);
@@ -103,7 +103,7 @@ body {
   overflow: hidden;
 }
 
-/* ---------------------------------------------------------------- player */
+/* player */
 .player {
   position: fixed; left: var(--gap); right: var(--gap); bottom: var(--gap); z-index: 30;
   min-height: var(--player-h);
@@ -112,7 +112,7 @@ body {
   padding-bottom: max(10px, env(safe-area-inset-bottom));
 }
 
-/* ---------------------------------------------------------------- tablet */
+/* tablet */
 @media (max-width: 1100px) {
   .main {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -135,7 +135,7 @@ body {
   .backdrop-scrim { background: radial-gradient(ellipse at 50% 35%, rgba(0,0,0,0) 0%, rgba(0,0,0,.3) 100%); }
 }
 
-/* ---------------------------------------------------------------- mobile */
+/* mobile */
 @media (max-width: 700px) {
   :root { --player-h: 68px; }
   .topbar { grid-template-columns: minmax(0, 1fr) auto; margin: 8px 8px 0; padding: 8px 10px; }
