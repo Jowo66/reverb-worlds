@@ -19,6 +19,8 @@ sw = (ROOT / "sw.js").read_text()
 listed = set(re.findall(r"^\s+'([^']+)',$", sw, re.M)) - {"./"}
 shipped = {p.relative_to(ROOT).as_posix() for p in [*ROOT.glob("js/**/*.js"), *ROOT.glob("css/*.css"), *ROOT.glob("assets/**/*.*")]} | {"index.html"}
 check("sw.js pre-caches every shipped file", shipped <= listed, sorted(shipped - listed))
+df_src = (ROOT / "js/worlds/deepfield.js").read_text(encoding="utf-8")
+check("Deep Field ships Deep-Fold's MIT notice", all(s in df_src for s in ["Copyright (c) 2020 Deep-Fold", "Copyright (c) 2021 Deep-Fold", "Permission is hereby granted, free of charge"]))
 check("every file sw.js lists exists", all((ROOT / f).exists() for f in listed), [f for f in listed if not (ROOT / f).exists()])
 
 with sync_playwright() as p:

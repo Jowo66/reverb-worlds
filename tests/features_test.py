@@ -207,13 +207,19 @@ with sync_playwright() as p:
       const r = { bass: .3, mid: .3, high: .3, energy: .3, kick: .5, snare: 0 }, t0 = performance.now();
       for (let i = 0; i < 60; i++) m.backdrop.draw(ctx, S, 3 + i / 24, 1 / 24, r);
       const ms = (performance.now() - t0) / 60, px = ctx.getImageData(240, 135, 1, 1).data;
+      const big = new OffscreenCanvas(3200, 1800), bctx = big.getContext('2d'), SB = { ...S, w: 3200, h: 1800, dpr: 1.25, rng: F.mulberry32(1337) };
+      for (const k of ['nebula', 'work', 'wctx', 'land', 'cloud', 'gas']) delete SB[k];
+      m.backdrop.init(SB); m.backdrop.draw(bctx, SB, 3, 1 / 24, r);
+      const t1 = performance.now(); for (let i = 0; i < 30; i++) m.backdrop.draw(bctx, SB, 3 + i / 24, 1 / 24, r);
+      const msBig = (performance.now() - t1) / 30;
       return { n: ids.length, procedural: ['df-ringed-planet', 'df-blackhole', 'df-galaxy', 'df-orbits'].every(k => ids.includes(k)), bad,
-        upright: [F.buildForm('robot-george', 320).upright, F.buildForm('ship-omen', 320).upright], ms, alpha: px[3] };
+        upright: [F.buildForm('robot-george', 320).upright, F.buildForm('ship-omen', 320).upright], ms, msBig, alpha: px[3] };
     })()""")
     check("deepfield pack exports 24 forms (20 baked + 4 procedural)", df["n"] == 24 and df["procedural"], df["n"])
     check("every Deep Field form builds at N=320 and N=720: no NaN, extent ≤ 1.3, exactly N points", not df["bad"], df["bad"][:5])
     check("robot forms report upright", df["upright"] == [True, False], df["upright"])
     check("deepfield backdrop init+draw on OffscreenCanvas ≤ 3 ms/frame", df["ms"] < 3 and df["alpha"] > 0, f"{df['ms']:.2f} ms, alpha {df['alpha']}")
+    check("deepfield backdrop ≤ 3 ms/frame at a 4K-class viewport (3200×1800)", df["msBig"] < 3, f"{df['msBig']:.2f} ms")
     dfp.context.close()
 
     # ---- world packs: lazy loading, wiring, failure, cold start
@@ -284,6 +290,16 @@ with sync_playwright() as p:
       const reduced = scan(); {R}.settings.set('reduceFlashing', false); return {{ reduced, normal: scan() }}; }})()""")
     red["fullReduced"] = fl["reduced"]; red["fullNormal"] = fl["normal"]
     check("deepfield reduced: crossfade + still backdrop + no flash", red["cross"] and red["still"] and not red["scan"] and not fl["reduced"] and fl["normal"], red)
+    wp.evaluate(f"{R}.settings.set('intensity', 0); {R}.settings.set('reduceFlashing', false)"); time.sleep(0.3)
+    st = wp.evaluate(f"""(() => {{ const E = {R}.engine, ctx = E.ctx, orig = ctx.fillRect; let n = 0;
+      ctx.fillRect = function (...a) {{ n++; return orig.apply(this, a); }};
+      E.morph('ship-omen', {{ instant: true }}); E.morph('robot-george');
+      E.t = 1; E._frame(0, false); const steady = n; n = 0; E.morph('ship-omen', {{ instant: true }}); E.morph('robot-george');
+      E.t = 0.5; E._frame(0, false); const mid = n; ctx.fillRect = orig; return {{ steady, mid }}; }})()""")
+    check("pixel-dissolve mid-morph draws no streaks between old and new positions", st["mid"] <= st["steady"] * 1.5, st)
+    wp.evaluate(f"{R}.settings.set('intensity', 70); {R}.settings.set('motion', 'reduced'); {R}.settings.set('reduceFlashing', false)"); time.sleep(0.3)
+    rs2 = wp.evaluate(f"(() => {{ const E = {R}.engine; E.effects.length = 0; E.lastFlash = -99; E._react('snare'); return E.effects.some(e => e.type === 'scan'); }})()")
+    check("deepfield reduced motion (flashing allowed): snare draws no scan sweep", rs2 is False, rs2)
     wc.close()
 
     # ---- mobile layout still fits

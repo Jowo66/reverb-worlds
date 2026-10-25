@@ -9,6 +9,28 @@
  *             banded light and dithering. The noise is sampled into tables in
  *             init(); draw() only looks values up. Rendered at 1/4 scale and
  *             upscaled without smoothing.
+ *
+ * The planet and nebula maths is ported from Deep-Fold's shaders, used under the MIT licence:
+ *   Pixel Planets: Copyright (c) 2020 Deep-Fold
+ *   Space Background: Copyright (c) 2021 Deep-Fold
+ *
+ *   Permission is hereby granted, free of charge, to any person obtaining a copy
+ *   of this software and associated documentation files (the "Software"), to deal
+ *   in the Software without restriction, including without limitation the rights
+ *   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *   copies of the Software, and to permit persons to whom the Software is
+ *   furnished to do so, subject to the following conditions:
+ *
+ *   The above copyright notice and this permission notice shall be included in all
+ *   copies or substantial portions of the Software.
+ *
+ *   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ *   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ *   SOFTWARE.
  */
 import { BAKED } from './deepfield-baked.js';
 
@@ -82,7 +104,7 @@ for (const f of BAKED) {
 }
 
 /* -------------------------------------------------------------- backdrop */
-const SCALE = 4; // backdrop pixels per art pixel
+const SCALE = 4, MAX_ART_W = 480; // backdrop pixels per art pixel; big screens get chunkier pixels, not more of them
 const NEB = ['#0b0a1f', '#141235', '#22194a', '#3a2466', '#6b2f7a', '#e05ca8'];
 const OCEAN = ['#3b6fb6', '#26477e', '#172a52', '#0f1634'];
 const LAND = ['#7cc35a', '#3f8a52', '#2d5a55', '#22303f'];
@@ -191,7 +213,7 @@ function gasRing(wc, P, front) {
 
 export const backdrop = {
   init(S) {
-    const w = Math.max(48, Math.round(S.w / SCALE)), h = Math.max(48, Math.round(S.h / SCALE));
+    const s = Math.max(SCALE, S.w / MAX_ART_W), w = Math.max(48, Math.round(S.w / s)), h = Math.max(48, Math.round(S.h / s));
     S.pw = w; S.ph = h;
     const neb = layer(w, h), g = neb.getContext('2d'), img = g.createImageData(w, h), fbm = makeFbm(3.7), rng = S.rng;
     const k = 120 / Math.max(w, h) * 4; // keep the nebula's scale independent of screen size

@@ -702,14 +702,17 @@ export class HologramEngine {
     }
     if (style === 'pixel-grid') {
       // Deep Field: hard squares snapped to a coarse grid; linked points are joined by stepped pixel lines.
-      const g = (mat.grid || 3) * dpr, q = v => Math.round(v / g) * g;
+      // Mid-morph, only join neighbours that have both jumped (or both not), and never across the stage.
+      const g = (mat.grid || 3) * dpr, q = v => Math.round(v / g) * g, maxSeg = 0.22 * Math.min(this.W, this.H);
       ctx.globalAlpha = baseAlpha;
       for (let i = 0; i < N; i++) {
         ctx.fillStyle = mat.colors[C[i]];
         let x = q(sx[i]), y = q(sy[i]);
         ctx.fillRect(x, y, g, g);
-        if (!to.link[i] || i + 1 >= N) continue;
-        const x1 = q(sx[i + 1]), y1 = q(sy[i + 1]), steps = Math.min(64, Math.max(Math.abs(x1 - x), Math.abs(y1 - y)) / g);
+        if (i + 1 >= N || !(prog && prog[i] < 0.5 ? this.fromForm : to).link[i] || (prog && prog[i] !== prog[i + 1])) continue;
+        const x1 = q(sx[i + 1]), y1 = q(sy[i + 1]), d = Math.max(Math.abs(x1 - x), Math.abs(y1 - y));
+        if (d > maxSeg) continue;
+        const steps = Math.min(64, d / g);
         for (let k = 1; k < steps; k++) ctx.fillRect(q(x + (x1 - x) * k / steps), q(y + (y1 - y) * k / steps), g, g);
       }
       return;
@@ -826,7 +829,7 @@ export class HologramEngine {
       case 'camera-flash': if (flashOk()) add({ type: 'flash', life: 0.18, color: '#ffffff', alpha: 0.28 * I, r: 0.5 }); break;
       case 'gloss-sheen': add({ type: 'sheen', life: 0.6 }); break;
       case 'pixel-shockwave': add({ type: 'ring', life: 0.7, color: '#ffb454', width: 2, from: 0.2, to: 1.25, dashed: true }); this.env.pulse = 0.6; break;
-      case 'scanline-flash': if (!this.opts.reduceFlashing && flashOk()) add({ type: 'scan', life: 0.35, color: '#5fe1d6' }); else this.env.pulse = 0.3; break;
+      case 'scanline-flash': if (full && !this.opts.reduceFlashing && flashOk()) add({ type: 'scan', life: 0.35, color: '#5fe1d6' }); else this.env.pulse = 0.3; break;
       case 'star-sparks': this._burst('glint', 8, 0.8); break;
       case 'channel-split': if (full) this.env.rgb = 1.4 * g; this._burst('pixel', 10, 0.8); break;
       default: break;
