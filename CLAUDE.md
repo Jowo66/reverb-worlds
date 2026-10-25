@@ -15,7 +15,7 @@ cd .. && python3 -m http.server 8765 --bind 127.0.0.1
 # Run from the parent folder, with the server above running:
 python3 reverb-worlds/tests/smoke_test.py        http://127.0.0.1:8765/reverb-worlds/   # 105 checks
 python3 reverb-worlds/tests/spotify_mock_test.py http://127.0.0.1:8765/reverb-worlds/   # 41 checks, simulated Spotify
-python3 reverb-worlds/tests/optimization_test.py http://127.0.0.1:8765/reverb-worlds/   # 24 checks
+python3 reverb-worlds/tests/optimization_test.py http://127.0.0.1:8765/reverb-worlds/   # 25 checks
 python3 reverb-worlds/tests/features_test.py     http://127.0.0.1:8765/reverb-worlds/   # 68 checks (v1.1, v1.2 share links + developer overlay, startup budget, Deep Field)
 python -m unittest reverb-worlds/tests/test_bake_forms.py                         # 12 checks, model baking tool
 
