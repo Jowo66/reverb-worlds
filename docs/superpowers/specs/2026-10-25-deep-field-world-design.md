@@ -45,22 +45,19 @@ Ported from the Deep-Fold shaders: tiled `rand`/`noise`/`fbm`, `spherify`, light
   - a small ringed gas giant, upper right: banded fbm, a back and front ring;
   - "+" twinkle stars;
   - a slow asteroid drift.
-- **Reactivity:** on a kick, extra twinkles fire, but only when the mode is real audio or the beat clock.
+- **Reactivity:** extra twinkles scale with `r.kick`, following the existing backdrops' pattern (the stage chip already states what drives the visuals).
 - **Reduced or Static motion:** planets frozen, no twinkle, no asteroids.
 
 ### 2.2 Hologram
 
-- **Forms:** 20 baked forms plus 4 procedural ones. All are selectable.
+- **Forms:** 20 baked forms plus 4 procedural ones, **all 24 in the world's pool** (`hologram.forms`). There is no form-picker UI (forms are reached by morphing, favourites and share links), so a separate "selectable only" list would be unreachable.
   - **Baked ships (11, Ultimate Spaceships):** Bob, Challenger, Dispatcher, Executioner, Imperial, Insurgent, Omen, Pancake, Spitfire, Striker, Zenith.
   - **Baked robots (9):**
     - George, Leela, Mike and Stan (Animated Mech Pack);
     - Robot (Animated Robot);
     - Mech Barbara, Fernando, Finn and Rae (Ultimate Space Kit).
   - **Procedural (4):** `df-ringed-planet`, `df-blackhole` (accretion disc), `df-galaxy` (point cloud), `df-orbits` (orbit rings).
-- **Auto-morph pool** (`hologram.forms`, 8 forms): ship-omen, ship-zenith, ship-striker, ship-spitfire, ship-dispatcher, ship-executioner, robot-george, robot-robot.
-  - The other 16 are listed in a new registry field, `hologram.extraForms`, so they can be chosen manually but aren't auto-picked.
-  - If the engine and Experience validation only accept `forms`, extend `validate`/`morph(id)` to accept `forms ∪ extraForms`.
-- **Material:** `point: 'pixel'`, a new point style. Points snap to integer device pixels at the stage's pixel size, and links draw as Bresenham-style pixel lines.
+- **Material:** `point: 'pixel-grid'`, a new point style (`'pixel'` already exists for Glitch Art), with `grid: 3` (CSS px) and `lines: false`. Points snap to integer device pixels at the stage's pixel size, and links draw as Bresenham-style pixel lines.
   - Colour: stepped depth palette `['#f1ecff', '#5fe1d6', '#2f8f9e', '#e05ca8']`, `colorMode: 'depth'`.
   - Glow: `glow: 0`; no blur.
 - **Motion:** `rotate 0.22`, `tilt 0.45`, `morph 1.6`.
@@ -95,7 +92,7 @@ Ported from the Deep-Fold shaders: tiled `rand`/`noise`/`fbm`, `spherify`, light
    `theme-manager` still applies the CSS palette immediately, and it still never calls the player.
 2. **Worker:** `init` and `thumb` messages include `pack` (or `null`). The worker keeps its own `ensurePack` cache: `await import('../worlds/<pack>.js')` and register it before using `BACKDROPS[renderer]`. The main-thread fallback (`_install`, `renderThumbnail`) runs only after `ensurePack` has resolved.
 3. **Thumbnails** are already drawn lazily through an `IntersectionObserver`, so the pack is fetched only when Deep Field's card is near the viewport.
-4. **Experiences and share links:** `validate` checks form ids against the registry (`forms ∪ extraForms`), so the pack isn't needed for validation. Applying an Experience goes through the same world-change path, so the pack loads first.
+4. **Experiences and share links:** `validate` checks form ids against the registry's `hologram.forms`, so the pack isn't needed for validation. Applying an Experience goes through the same world-change path, so the pack loads first.
 
 ### 3.3 Failure handling
 
@@ -122,10 +119,10 @@ Ported from the Deep-Fold shaders: tiled `rand`/`noise`/`fbm`, `spherify`, light
   4. Keep the `edges` longest feature edges.
   5. Apply `rotate`; centre on the bounding-box midpoint; scale so the largest absolute coordinate is 1.1.
   6. Quantise to Int8 (`round(v / 1.1 * 127)`, decode `v = q / 127 * 1.1`).
-  7. Write `data` as base64 of `[x0,y0,z0,x1,y1,z1]` per edge.
-- **Decoding** (in `deepfield.js`): each edge becomes a two-point path `P([[x0,y0,z0],[x1,y1,z1]])`. `buildForm` then resamples all paths by length, which gives morphing and the link flags with no special cases.
-  - If `buildForm`'s `maxLines = floor(remaining / 2)` would drop edges, merge collinear or connected edges into polylines in the tool so the path count stays ≤ N/2.
-- **Validation (fail loudly):** no NaN, extent ≤ 1.3, at least 40 edges, and the id is unique and kebab-case.
+  7. Chain the kept edges into polylines. Write `data` as base64 of Int8 values: for each polyline, a count byte (number of points, 2–127), followed by x,y,z per point.
+- **Decoding** (in `deepfield.js`): each polyline becomes one open path. `buildForm` then resamples all paths by length, which gives morphing and the link flags with no special cases.
+  - The low quality tier has N = 320, so `buildForm` keeps at most 160 paths. The tool chains connected edges into polylines (a greedy walk through shared vertices), and each form must have ≤ 140 paths. Decoding then yields one path per polyline.
+- **Validation (fail loudly):** no NaN, extent ≤ 1.3, at least 40 edges, ≤ 140 polylines, and the id is unique and kebab-case.
 - **Tuning:** robots start at `edges: 250`; adjust `rotate`/`upright` per model using the preview contact sheet.
 - **Credits:** README line "Hologram forms in Deep Field are traced from CC0 models by Quaternius (quaternius.com)"; the pitch wording becomes "no image or audio assets".
 - **Excluded sources:** "Mechs & Robots" (no licence file), SFCP (CC BY-NC) and CraftPix packs.
