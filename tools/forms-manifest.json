@@ -1,0 +1,151 @@
+[
+  {
+    "id": "ship-bob",
+    "label": "Bob",
+    "src": "Ultimate Spaceships - May 2021/Bob/OBJ/Bob.obj",
+    "credit": "Quaternius (CC0)",
+    "edges": 150
+  },
+  {
+    "id": "ship-challenger",
+    "label": "Challenger",
+    "src": "Ultimate Spaceships - May 2021/Challenger/OBJ/Challenger.obj",
+    "credit": "Quaternius (CC0)",
+    "edges": 150
+  },
+  {
+    "id": "ship-dispatcher",
+    "label": "Dispatcher",
+    "src": "Ultimate Spaceships - May 2021/Dispatcher/OBJ/Dispatcher.obj",
+    "credit": "Quaternius (CC0)",
+    "edges": 150
+  },
+  {
+    "id": "ship-executioner",
+    "label": "Executioner",
+    "src": "Ultimate Spaceships - May 2021/Executioner/OBJ/Executioner.obj",
+    "credit": "Quaternius (CC0)",
+    "edges": 150
+  },
+  {
+    "id": "ship-imperial",
+    "label": "Imperial",
+    "src": "Ultimate Spaceships - May 2021/Imperial/OBJ/Imperial.obj",
+    "credit": "Quaternius (CC0)",
+    "edges": 150
+  },
+  {
+    "id": "ship-insurgent",
+    "label": "Insurgent",
+    "src": "Ultimate Spaceships - May 2021/Insurgent/OBJ/Insurgent.obj",
+    "credit": "Quaternius (CC0)",
+    "edges": 150
+  },
+  {
+    "id": "ship-omen",
+    "label": "Omen",
+    "src": "Ultimate Spaceships - May 2021/Omen/OBJ/Omen.obj",
+    "credit": "Quaternius (CC0)",
+    "edges": 150
+  },
+  {
+    "id": "ship-pancake",
+    "label": "Pancake",
+    "src": "Ultimate Spaceships - May 2021/Pancake/OBJ/Pancake.obj",
+    "credit": "Quaternius (CC0)",
+    "edges": 150
+  },
+  {
+    "id": "ship-spitfire",
+    "label": "Spitfire",
+    "src": "Ultimate Spaceships - May 2021/Spitfire/OBJ/Spitfire.obj",
+    "credit": "Quaternius (CC0)",
+    "edges": 150
+  },
+  {
+    "id": "ship-striker",
+    "label": "Striker",
+    "src": "Ultimate Spaceships - May 2021/Striker/OBJ/Striker.obj",
+    "credit": "Quaternius (CC0)",
+    "edges": 150
+  },
+  {
+    "id": "ship-zenith",
+    "label": "Zenith",
+    "src": "Ultimate Spaceships - May 2021/Zenith/OBJ/Zenith.obj",
+    "credit": "Quaternius (CC0)",
+    "edges": 150
+  },
+  {
+    "id": "robot-george",
+    "label": "George",
+    "src": "Animated Mech Pack - March 2021/Flat Colors/OBJ/George.obj",
+    "credit": "Quaternius (CC0)",
+    "edges": 250,
+    "upright": true
+  },
+  {
+    "id": "robot-leela",
+    "label": "Leela",
+    "src": "Animated Mech Pack - March 2021/Flat Colors/OBJ/Leela.obj",
+    "credit": "Quaternius (CC0)",
+    "edges": 250,
+    "upright": true
+  },
+  {
+    "id": "robot-mike",
+    "label": "Mike",
+    "src": "Animated Mech Pack - March 2021/Flat Colors/OBJ/Mike.obj",
+    "credit": "Quaternius (CC0)",
+    "edges": 250,
+    "upright": true
+  },
+  {
+    "id": "robot-stan",
+    "label": "Stan",
+    "src": "Animated Mech Pack - March 2021/Flat Colors/OBJ/Stan.obj",
+    "credit": "Quaternius (CC0)",
+    "edges": 250,
+    "upright": true
+  },
+  {
+    "id": "robot-robot",
+    "label": "Robot",
+    "src": "Animated Robot - Oct 2018/OBJ/Robot.obj",
+    "credit": "Quaternius (CC0)",
+    "edges": 250,
+    "upright": true
+  },
+  {
+    "id": "robot-mech-barbara",
+    "label": "Mech Barbara",
+    "src": "Ultimate Space Kit - March 2023/Characters/OBJ/Mech_BarbaraTheBee.obj",
+    "credit": "Quaternius (CC0)",
+    "edges": 250,
+    "upright": true
+  },
+  {
+    "id": "robot-mech-fernando",
+    "label": "Mech Fernando",
+    "src": "Ultimate Space Kit - March 2023/Characters/OBJ/Mech_FernandoTheFlamingo.obj",
+    "credit": "Quaternius (CC0)",
+    "edges": 250,
+    "upright": true
+  },
+  {
+    "id": "robot-mech-finn",
+    "label": "Mech Finn",
+    "src": "Ultimate Space Kit - March 2023/Characters/OBJ/Mech_FinnTheFrog.obj",
+    "credit": "Quaternius (CC0)",
+    "edges": 250,
+    "upright": true
+  },
+  {
+    "id": "robot-mech-rae",
+    "label": "Mech Rae",
+    "src": "Ultimate Space Kit - March 2023/Characters/OBJ/Mech_RaeTheRedPanda.obj",
+    "credit": "Quaternius (CC0)",
+    "edges": 250,
+    "upright": true
+  }
+]

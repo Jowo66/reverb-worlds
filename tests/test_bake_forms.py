@@ -1,0 +1,87 @@
+"""Unit tests for tools/bake_forms.py (offline OBJ → Int8 polyline baker).
+
+Run: python -m unittest tests/test_bake_forms.py -v
+"""
+import math
+import os
+import pathlib
+import sys
+import tempfile
+import unittest
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "tools"))
+import bake_forms as B  # noqa: E402
+
+CUBE = """v -1 -1 -1
+v 1 -1 -1
+v 1 1 -1
+v -1 1 -1
+v -1 -1 1
+v 1 -1 1
+v 1 1 1
+v -1 1 1
+f 1 2 3 4
+f 5 8 7 6
+f 1 5 6 2
+f 2 6 7 3
+f 3 7 8 4
+f 5 1 4 8
+"""
+
+
+def cube_path():
+    fd, path = tempfile.mkstemp(suffix=".obj")
+    with os.fdopen(fd, "w") as f:
+        f.write(CUBE)
+    return path
+
+
+class BakeFormsTest(unittest.TestCase):
+    def setUp(self):
+        self.path = cube_path()
+
+    def tearDown(self):
+        os.remove(self.path)
+
+    def test_cube_feature_edges(self):
+        verts, tris = B.load_obj(self.path)
+        self.assertEqual(len(tris), 12)
+        self.assertEqual(len(B.feature_edges(verts, tris, 50)), 12)  # diagonals lie on flat faces
+
+    def test_bake_extent(self):
+        polys = B.bake(self.path)
+        ext = max(abs(c) for poly in polys for p in poly for c in p)
+        self.assertAlmostEqual(ext, 1.1, places=6)
+
+    def test_roundtrip(self):
+        polys = B.bake(self.path)
+        back = B.decode(B.encode(polys))
+        self.assertEqual([len(p) for p in back], [len(p) for p in polys])
+        for pa, pb in zip(polys, back):
+            for a, b in zip(pa, pb):
+                for x, y in zip(a, b):
+                    self.assertLessEqual(abs(x - y), 1.1 / 127 + 1e-9)
+
+    def test_chaining(self):
+        self.assertLessEqual(len(B.bake(self.path)), 6)
+
+    def test_bake_fit_shrinks_edge_budget(self):
+        polys = B.bake_fit(self.path, edges=12, max_polylines=2)
+        self.assertLessEqual(len(polys), 2)
+        self.assertGreaterEqual(sum(len(p) - 1 for p in polys), 1)
+
+    def test_validate_rejects(self):
+        polys = B.bake(self.path)
+        B.validate("test-cube", polys)  # small test forms are exempt from the 40-edge minimum
+        with self.assertRaises(ValueError):
+            B.validate("Bad Id", polys)
+        with self.assertRaises(ValueError):
+            B.validate("test-many", [[(0, 0, 0), (0.1, 0, 0)]] * 141)
+        with self.assertRaises(ValueError):
+            B.validate("test-nan", [[(math.nan, 0, 0), (0.1, 0, 0)]])
+        with self.assertRaises(ValueError):
+            B.validate("ship-tiny", polys)  # 12 edges < 40
+
+
+if __name__ == "__main__":
+    unittest.main()
