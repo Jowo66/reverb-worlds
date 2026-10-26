@@ -77,7 +77,7 @@ export class HologramEngine {
     this.time = 0;
     this.last = 0;
     this.rotY = 0; this.rotYTarget = 0; this.hardTimer = 0;
-    this.env = { pulse: 0, lift: 0, compress: 0, light: 0, drift: 0, rgb: 0, mirror: 0, tear: 0, cut: 0, ray: -1, displace: 0, edge: 0, focus: -1, k: 0, s: 0 };
+    this.env = { pulse: 0, lift: 0, compress: 0, light: 0, drift: 0, rgb: 0, mirror: 0, tear: 0, cut: 0, ray: -1, displace: 0, edge: 0, focus: -1, k: 0, s: 0, jit: 0 };
     this.smooth = { bass: 0, mid: 0, high: 0, energy: 0 };
     this.effects = [];
     this.lastFlash = 0;
@@ -416,6 +416,7 @@ export class HologramEngine {
     const cx = W / 2, cy = H / 2, F = 3.4;
     const ortho = !!this.mat.flat;
     const quant = this.mat.pixel ? Math.max(2, Math.round(3 * this.dpr)) : 0;
+    const jit = motion === 'full' && this.env.jit > 0.03 ? this.env.jit * 5 * this.dpr : 0;
     const project = (src, ox, oy, oz) => {
       for (let i = 0; i < N; i++) {
         const j = i * 3;
@@ -427,6 +428,7 @@ export class HologramEngine {
         const y2 = y * cX - z1 * sX, z2 = y * sX + z1 * cX;
         const s = ortho ? 1 : F / (F - z2);
         let px = cx + x1 * R * s * scaleK, py = cy - y2 * R * s * scaleK;
+        if (jit) { px += (Math.random() - 0.5) * jit; py += (Math.random() - 0.5) * jit; }
         if (quant) { px = Math.round(px / quant) * quant; py = Math.round(py / quant) * quant; }
         ox[i] = px; oy[i] = py; oz[i] = clamp(z2, -1.2, 1.2);
       }
@@ -832,6 +834,8 @@ export class HologramEngine {
       case 'scanline-flash': if (full && !this.opts.reduceFlashing && flashOk()) add({ type: 'scan', life: 0.35, color: '#5fe1d6' }); else this.env.pulse = 0.3; break;
       case 'star-sparks': this._burst('glint', 8, 0.8); break;
       case 'channel-split': if (full) this.env.rgb = 1.4 * g; this._burst('pixel', 10, 0.8); break;
+      case 'headlight-flare': this.env.pulse = 0.5; if (flashOk()) add({ type: 'flash', life: 0.3, color: '#ffd9a0', alpha: 0.22 * I, oy: 0.25, r: 0.9 }); break;
+      case 'poly-jitter': if (full) this.env.jit = g; break;
       default: break;
     }
   }

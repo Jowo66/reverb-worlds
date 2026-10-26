@@ -224,6 +224,42 @@ with sync_playwright() as p:
     check("deepfield backdrop ≤ 3 ms/frame at a 4K-class viewport (3200×1800)", df["msBig"] < 3, f"{df['msBig']:.2f} ms")
     dfp.context.close()
 
+    # ---- packs carry their hologram settings (startup registry holds only formIds)
+    hp = b.new_context(viewport={"width": 1440, "height": 900}).new_page()
+    hp.goto(BASE); wait(hp, f"{R} && {R}.engine.toForm")
+    ph = hp.evaluate("""(async () => {
+      const T = await import('./js/theme-registry.js'), X = await import('./js/experience.js'), P = await import('./js/world-packs.js');
+      const df = T.THEME_BY_ID.deepfield, before = { holo: df.hologram === undefined, ids: !!df.formIds && df.formIds.test('ship-omen') && !df.formIds.test('neon-tower') };
+      const v = X.validate({ world: 'deepfield', form: 'ship-omen' }), bad = X.validate({ world: 'deepfield', form: 'aqua-bubbles' });
+      const owner = X.worldOfForm('robot-george');
+      await P.ensurePack(df);
+      return { before, kept: v.form === 'ship-omen', rejected: bad.form === undefined, owner, after: df.hologram?.forms?.length };
+    })()""")
+    check("pack worlds have no hologram block at startup, only formIds", ph["before"]["holo"] and ph["before"]["ids"], ph["before"])
+    check("share links/favourites recognise pack forms before the pack loads", ph["kept"] and ph["rejected"] and ph["owner"] == "deepfield", ph)
+    check("ensurePack installs the pack's hologram settings (Deep Field: 33 forms)", ph["after"] == 33, ph["after"])
+    hp.evaluate(f"{R}.themeManager.apply('aero', 'user')"); time.sleep(0.5)
+    hp.route("**/js/worlds/midnight.js", lambda r: r.abort())
+    hp.keyboard.press("i"); wait(hp, "!!document.querySelector('#info-panel')")
+    herr = []; hp.on("pageerror", lambda e: herr.append(str(e)))
+    hp.evaluate(f"{R}.themeManager.apply('midnight', 'user')"); time.sleep(1.2)
+    check("Info panel open while a pack loads or fails: no errors", not herr, herr[:2])
+    hp.context.close()
+
+    # ---- engine reactions for Midnight Drive
+    ep = b.new_context(viewport={"width": 1440, "height": 900}).new_page()
+    ep.goto(BASE); wait(ep, f"{R} && {R}.engine.toForm")
+    er = ep.evaluate(f"""(() => {{ const E = {R}.engine, h = E.theme.hologram, saved = h.reactions;
+      h.reactions = {{ kick: 'headlight-flare', snare: 'poly-jitter' }};
+      E.setOptions({{ motion: 'full', reduceFlashing: false }}); E.effects.length = 0; E.lastFlash = -99; E.env.jit = 0;
+      E._react('kick'); const flare = E.effects.some(e => e.type === 'flash'); E.effects.length = 0; E._react('kick'); const gap = E.effects.some(e => e.type === 'flash');
+      E._react('snare'); const jit = E.env.jit; E.env.jit = 0;
+      E.setOptions({{ motion: 'reduced' }}); E._react('snare'); const jitReduced = E.env.jit;
+      h.reactions = saved; return {{ flare, gap, jit, jitReduced }}; }})()""")
+    check("headlight-flare: warm flash on kick, none inside the minimum flash gap", er["flare"] and not er["gap"], er)
+    check("poly-jitter: shakes vertices in full motion only", er["jit"] > 0.03 and er["jitReduced"] == 0, er)
+    ep.context.close()
+
     # ---- world packs: lazy loading, wiring, failure, cold start
     PACK_FORM = "(id => /^(ship|robot|df)-/.test(id))"
     def fresh(url=BASE):

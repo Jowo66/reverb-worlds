@@ -22,6 +22,9 @@ export const KEYS = { session: 'reverb-worlds:session:v1', saved: 'reverb-worlds
 const num = (v, lo, hi) => (typeof v === 'number' && Number.isFinite(v) && v >= lo && v <= hi ? v : undefined);
 const SPOTIFY_URI = /^spotify:(track|album|playlist|artist|episode|show):[A-Za-z0-9]{10,40}$/;
 
+// Pack worlds list their forms only once loaded; until then `formIds` recognises them.
+const ownsForm = (t, id) => typeof id === 'string' && (t.hologram ? t.hologram.forms.includes(id) : !!t.formIds?.test(id));
+
 /** Clean an untrusted Experience. Returns null if it doesn't name a real world. */
 export function validate(raw) {
   if (!raw || typeof raw !== 'object') return null;
@@ -29,7 +32,7 @@ export function validate(raw) {
   if (!theme) return null;
   const exp = { v: SCHEMA, world: theme.id };
   if (typeof raw.name === 'string') exp.name = raw.name.replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 40);
-  if (theme.hologram.forms.includes(raw.form)) exp.form = raw.form;
+  if (ownsForm(theme, raw.form)) exp.form = raw.form;
   const rx = num(raw.view?.rx, -1.35, 1.35), ry = num(raw.view?.ry, -1e4, 1e4);
   if (rx !== undefined && ry !== undefined) exp.view = { rx, ry: ry % (Math.PI * 2) };
   const s = raw.settings || {}, out = {};
@@ -116,4 +119,4 @@ export const favs = {
 export const favouriteWorlds = () => { const f = favs.all().worlds; return THEMES.filter(t => f.includes(t.id)).map(t => t.id); };
 
 /** The world a form belongs to (forms are unique to one world's pool). */
-export const worldOfForm = id => THEMES.find(t => t.hologram.forms.includes(id))?.id || null;
+export const worldOfForm = id => THEMES.find(t => ownsForm(t, id))?.id || null;

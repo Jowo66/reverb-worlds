@@ -30,7 +30,7 @@ function countFps(t) {
 
 function update() {
   if (!panel) return;
-  const e = A.engine, t = A.themeManager.current, P = e.particles;
+  const e = A.engine, t = e.theme, P = e.particles; // the world on screen (a pack may still be loading)
   let alive = 0; for (let i = 0; i < P.n; i++) if (P.life[i] > 0) alive++;
   const rows = [
     ['World', `${t.name} · ${t.num}/${A.THEMES.length}`],

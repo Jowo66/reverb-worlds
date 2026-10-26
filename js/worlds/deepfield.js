@@ -103,6 +103,20 @@ for (const f of BAKED) {
   forms[f.id] = { label: f.label, upright: f.upright, credit: f.credit, build: () => paths };
 }
 
+/* ------------------------------------------------- hologram settings */
+// Installed into the registry entry by world-packs.js when the pack loads.
+export const hologram = {
+  forms: ['ship-omen', 'ship-zenith', 'ship-striker', 'ship-spitfire', 'ship-dispatcher', 'ship-executioner', 'ship-bob', 'ship-challenger', 'ship-imperial', 'ship-insurgent', 'ship-pancake',
+    'robot-george', 'robot-leela', 'robot-mike', 'robot-stan', 'robot-robot', 'robot-mech-barbara', 'robot-mech-fernando', 'robot-mech-finn', 'robot-mech-rae',
+    'robot-voxel-arachnodroid', 'robot-voxel-companion-bot', 'robot-voxel-field-fighter', 'robot-voxel-mecha-golem', 'robot-voxel-mecha-01', 'robot-voxel-mecha-trooper', 'robot-voxel-mobile-storage-bot', 'robot-voxel-quadruped-tank', 'robot-voxel-recon-bot',
+    'df-ringed-planet', 'df-blackhole', 'df-galaxy', 'df-orbits'],
+  material: { colors: ['#f1ecff', '#5fe1d6', '#2f8f9e', '#e05ca8'], colorMode: 'depth', composite: 'source-over', lines: false, point: 'pixel-grid', grid: 3, pointSize: 1, glow: 0, glowAlpha: 0, halo: false },
+  motion: { rotate: 0.22, tilt: 0.45, morph: 1.6 },
+  transition: 'pixel-dissolve',
+  reactions: { kick: 'pixel-shockwave', snare: 'scanline-flash', high: 'star-sparks' },
+  particles: { kind: 'spark', colors: ['#ffb454', '#5fe1d6', '#f1ecff'], rate: 10 },
+};
+
 /* -------------------------------------------------------------- backdrop */
 const SCALE = 4, MAX_ART_W = 480; // backdrop pixels per art pixel; big screens get chunkier pixels, not more of them
 const NEB = ['#0b0a1f', '#141235', '#22194a', '#3a2466', '#6b2f7a', '#e05ca8'];
