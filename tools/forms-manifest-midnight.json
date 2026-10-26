@@ -1,0 +1,153 @@
+[
+  {
+    "id": "psx-car-01",
+    "label": "Coupe 01",
+    "src": "PSX_Style_Cars_by_GGBot_(August2023)/Car 01/Car.obj",
+    "credit": "GGBot (CC0)",
+    "edges": 150
+  },
+  {
+    "id": "psx-car-02",
+    "label": "Car 02",
+    "src": "PSX_Style_Cars_by_GGBot_(August2023)/Car 02/Car2.obj",
+    "credit": "GGBot (CC0)",
+    "edges": 150
+  },
+  {
+    "id": "psx-car-03",
+    "label": "Coupe 03",
+    "src": "PSX_Style_Cars_by_GGBot_(August2023)/Car 03/Car3.obj",
+    "credit": "GGBot (CC0)",
+    "edges": 150
+  },
+  {
+    "id": "psx-car-04",
+    "label": "Car 04",
+    "src": "PSX_Style_Cars_by_GGBot_(August2023)/Car 04/Car4.obj",
+    "credit": "GGBot (CC0)",
+    "edges": 150
+  },
+  {
+    "id": "psx-car-05",
+    "label": "Car 05",
+    "src": "PSX_Style_Cars_by_GGBot_(August2023)/Car 05/Car5.obj",
+    "credit": "GGBot (CC0)",
+    "edges": 150
+  },
+  {
+    "id": "psx-car-06",
+    "label": "Car 06",
+    "src": "PSX_Style_Cars_by_GGBot_(August2023)/Car 06/Car6.obj",
+    "credit": "GGBot (CC0)",
+    "edges": 150
+  },
+  {
+    "id": "psx-car-07",
+    "label": "Car 07",
+    "src": "PSX_Style_Cars_by_GGBot_(August2023)/Car 07/Car7.obj",
+    "credit": "GGBot (CC0)",
+    "edges": 150
+  },
+  {
+    "id": "psx-car-08",
+    "label": "Car 08",
+    "src": "PSX_Style_Cars_by_GGBot_(August2023)/Car 08/Car8.obj",
+    "credit": "GGBot (CC0)",
+    "edges": 150
+  },
+  {
+    "id": "psx-police",
+    "label": "Police Cruiser",
+    "src": "PSX_Style_Cars_by_GGBot_(August2023)/Car 05/Car5_Police.obj",
+    "credit": "GGBot (CC0)",
+    "edges": 150
+  },
+  {
+    "id": "psx-taxi",
+    "label": "Taxi",
+    "src": "PSX_Style_Cars_by_GGBot_(August2023)/Car 05/Car5_Taxi.obj",
+    "credit": "GGBot (CC0)",
+    "edges": 150
+  },
+  {
+    "id": "psx-sportscar",
+    "label": "Sports Car",
+    "src": "Realistic Car Pack - Nov 2018/OBJ/SportsCar.obj",
+    "credit": "Quaternius (CC0)",
+    "edges": 220,
+    "angle": 25
+  },
+  {
+    "id": "psx-sportscar-2",
+    "label": "Roadster",
+    "src": "Realistic Car Pack - Nov 2018/OBJ/SportsCar2.obj",
+    "credit": "Quaternius (CC0)",
+    "edges": 220,
+    "angle": 25
+  },
+  {
+    "id": "psx-suv",
+    "label": "SUV",
+    "src": "Realistic Car Pack - Nov 2018/OBJ/SUV.obj",
+    "credit": "Quaternius (CC0)",
+    "edges": 220,
+    "angle": 25
+  },
+  {
+    "id": "psx-sedan",
+    "label": "Sedan",
+    "src": "Realistic Car Pack - Nov 2018/OBJ/NormalCar1.obj",
+    "credit": "Quaternius (CC0)",
+    "edges": 220,
+    "angle": 25
+  },
+  {
+    "id": "psx-cop",
+    "label": "Patrol Car",
+    "src": "Realistic Car Pack - Nov 2018/OBJ/Cop.obj",
+    "credit": "Quaternius (CC0)",
+    "edges": 220,
+    "angle": 25
+  },
+  {
+    "id": "psx-pickup",
+    "label": "Pickup",
+    "src": "Zombie Apocalypse Kit - March 2024/Vehicles/OBJ/Vehicle_Pickup.obj",
+    "credit": "Quaternius (CC0)",
+    "edges": 220,
+    "angle": 25
+  },
+  {
+    "id": "psx-muscle",
+    "label": "Muscle Car",
+    "src": "Zombie Apocalypse Kit - March 2024/Vehicles/OBJ/Vehicle_Sports.obj",
+    "credit": "Quaternius (CC0)",
+    "edges": 220,
+    "angle": 25
+  },
+  {
+    "id": "psx-streetlight",
+    "label": "Streetlight",
+    "src": "Street Pack by @Quaternius/OBJ/Streetlight_Single.obj",
+    "credit": "Quaternius (CC0)",
+    "edges": 200,
+    "upright": true,
+    "angle": 20
+  },
+  {
+    "id": "psx-traffic-light",
+    "label": "Traffic Light",
+    "src": "Street Pack by @Quaternius/OBJ/TrafficLight.obj",
+    "credit": "Quaternius (CC0)",
+    "edges": 150,
+    "upright": true
+  },
+  {
+    "id": "psx-stop-sign",
+    "label": "Stop Sign",
+    "src": "Street Pack by @Quaternius/OBJ/Sign_Stop.obj",
+    "credit": "Quaternius (CC0)",
+    "edges": 150,
+    "upright": true
+  }
+]
