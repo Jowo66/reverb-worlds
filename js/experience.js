@@ -22,7 +22,6 @@ export const KEYS = { session: 'reverb-worlds:session:v1', saved: 'reverb-worlds
 const num = (v, lo, hi) => (typeof v === 'number' && Number.isFinite(v) && v >= lo && v <= hi ? v : undefined);
 const SPOTIFY_URI = /^spotify:(track|album|playlist|artist|episode|show):[A-Za-z0-9]{10,40}$/;
 
-// Pack worlds list their forms only once loaded; until then `formIds` recognises them.
 const ownsForm = (t, id) => typeof id === 'string' && (t.hologram ? t.hologram.forms.includes(id) : !!t.formIds?.test(id));
 
 /** Clean an untrusted Experience. Returns null if it doesn't name a real world. */

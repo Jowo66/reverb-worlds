@@ -339,10 +339,9 @@ export class HologramEngine {
     if (this.frameTimes.length < 120) return;
     const avg = this.frameTimes.reduce((a, b) => a + b, 0) / this.frameTimes.length;
     this.frameTimes.length = 0;
-    // Below ~50 fps: first let the page drop cheap-to-lose effects (the panel blur is the usual
-    // culprit on GPU-less machines); only then step the hologram's own detail down.
+    // < ~50 fps: the page drops cheap effects first (panel blur, the usual GPU-less culprit);
+    // < ~40 fps: step our own detail down. Never step up automatically mid-session.
     if (avg > 20 && this.hooks.onSlow?.()) return;
-    // Under sustained load (< ~40 fps), step quality down. Never step up automatically mid-session.
     if (avg > 25) {
       if (this.qualityTier === 'high') this._setTier('medium');
       else if (this.qualityTier === 'medium') this._setTier('low');
@@ -416,7 +415,7 @@ export class HologramEngine {
     const cx = W / 2, cy = H / 2, F = 3.4;
     const ortho = !!this.mat.flat;
     const quant = this.mat.pixel ? Math.max(2, Math.round(3 * this.dpr)) : 0;
-    const jit = motion === 'full' && this.env.jit > 0.03 ? this.env.jit * 5 * this.dpr : 0;
+    const jit = motion === 'full' && this.env.jit > .03 ? this.env.jit * 5 * this.dpr : 0;
     const project = (src, ox, oy, oz) => {
       for (let i = 0; i < N; i++) {
         const j = i * 3;
@@ -703,8 +702,8 @@ export class HologramEngine {
       return;
     }
     if (style === 'pixel-grid') {
-      // Deep Field: hard squares snapped to a coarse grid; linked points are joined by stepped pixel lines.
-      // Mid-morph, only join neighbours that have both jumped (or both not), and never across the stage.
+      // Deep Field: grid-snapped squares joined by stepped pixel lines; mid-morph only between
+      // neighbours on the same side of their jump, and never across the stage.
       const g = (mat.grid || 3) * dpr, q = v => Math.round(v / g) * g, maxSeg = 0.22 * Math.min(this.W, this.H);
       ctx.globalAlpha = baseAlpha;
       for (let i = 0; i < N; i++) {

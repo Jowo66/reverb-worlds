@@ -191,6 +191,7 @@ with sync_playwright() as p:
     # ---- Deep Field pack module (forms + backdrop), imported directly
     dfp = b.new_context(viewport={"width": 1440, "height": 900}).new_page()
     dfp.goto(BASE); wait(dfp, f"{R} && {R}.engine.toForm")
+    dfp.evaluate(f"{R}.engine.stop(); {R}.backdrop.stop()")  # time the backdrop alone, not the live app beside it
     df = dfp.evaluate("""(async () => {
       const m = await import('./js/worlds/deepfield.js'), F = await import('./js/hologram/forms.js');
       Object.assign(F.FORMS, m.forms);
@@ -348,6 +349,79 @@ with sync_playwright() as p:
     rs2 = wp.evaluate(f"(() => {{ const E = {R}.engine; E.effects.length = 0; E.lastFlash = -99; E._react('snare'); return E.effects.some(e => e.type === 'scan'); }})()")
     check("deepfield reduced motion (flashing allowed): snare draws no scan sweep", rs2 is False, rs2)
     wc.close()
+
+    # ---- Midnight Drive (world 16, PSX Lo-Fi)
+    mp_ = b.new_context(viewport={"width": 1440, "height": 900}).new_page()
+    mp_.goto(BASE); wait(mp_, f"{R} && {R}.engine.toForm")
+    mp_.evaluate(f"{R}.engine.stop(); {R}.backdrop.stop()")
+    md = mp_.evaluate("""(async () => {
+      const m = await import('./js/worlds/midnight.js'), F = await import('./js/hologram/forms.js');
+      Object.assign(F.FORMS, m.forms);
+      const ids = Object.keys(m.forms), bad = [];
+      for (const id of ids) for (const N of [320, 720]) {
+        const f = F.buildForm(id, N, 1); let ext = 0, ok = f.pos.length === N * 3;
+        for (const v of f.pos) { if (!Number.isFinite(v)) ok = false; ext = Math.max(ext, Math.abs(v)); }
+        if (!ok || ext > 1.3) bad.push(`${id}@${N}:${ext.toFixed(2)}`);
+      }
+      const proc = ['psx-disc', 'psx-memory-card', 'psx-boot-diamond'];
+      const credits = ids.filter(id => !proc.includes(id)).every(id => /\\((CC0)\\)$/.test(F.buildForm(id, 320).credit || ''));
+      const S = { w: 480, h: 270, dpr: 0.25, rng: F.mulberry32(1337), glitch: 0.5, animate: true, boot: -1,
+        palette: { bg: '#07080f', surface: '#141a2b', primary: '#ff9a3c', secondary: '#6fc7c9', accent: '#ff3b4f', text: '#e8ecf5', muted: '#9aa3bd' } };
+      const c = new OffscreenCanvas(480, 270), ctx = c.getContext('2d'), r = { bass: .3, mid: .3, high: .3, energy: .5, kick: .6, snare: 0 };
+      m.backdrop.init(S); m.backdrop.draw(ctx, S, 3, 1 / 24, r);
+      const time = (S2, cx, n) => { const t0 = performance.now(); for (let i = 0; i < n; i++) m.backdrop.draw(cx, S2, 3 + i / 24, 1 / 24, r); return (performance.now() - t0) / n; };
+      const ms = time(S, ctx, 60), px = ctx.getImageData(240, 200, 1, 1).data;
+      const big = new OffscreenCanvas(3200, 1800), SB = { ...S, w: 3200, h: 1800, dpr: 1.25, rng: F.mulberry32(1337), boot: -1 };
+      for (const k of Object.keys(SB)) if (!['w', 'h', 'dpr', 'rng', 'glitch', 'animate', 'boot', 'palette'].includes(k)) delete SB[k];
+      m.backdrop.init(SB); m.backdrop.draw(big.getContext('2d'), SB, 3, 1 / 24, r);
+      const msBig = time(SB, big.getContext('2d'), 30);
+      const SBoot = { ...SB, boot: 0.6 }; const msBoot = time(SBoot, big.getContext('2d'), 10);
+      const holo = m.hologram;
+      return { n: ids.length, proc: proc.every(k => ids.includes(k)), bad, credits, ms, msBig, msBoot, alpha: px[3],
+        pool: holo.forms.length, allPsx: holo.forms.every(f => f.startsWith('psx-') && ids.includes(f)), reactions: holo.reactions };
+    })()""")
+    check("midnight pack exports 23 forms (20 traced + 3 procedural), all in the pool", md["n"] == 23 and md["proc"] and md["pool"] == 23 and md["allPsx"], md["n"])
+    check("every Midnight form builds at N=320 and N=720: no NaN, extent ≤ 1.3, exactly N points", not md["bad"], md["bad"][:5])
+    check("traced Midnight forms credit their CC0 author", md["credits"])
+    check("midnight reactions: headlight-flare + poly-jitter", md["reactions"].get("kick") == "headlight-flare" and md["reactions"].get("snare") == "poly-jitter", md["reactions"])
+    check("midnight backdrop draws and stays ≤ 3 ms/frame", md["ms"] < 3 and md["alpha"] > 0, f"{md['ms']:.2f} ms")
+    check("midnight backdrop ≤ 3 ms/frame at 3200×1800, road and boot intro", md["msBig"] < 3 and md["msBoot"] < 3, f"road {md['msBig']:.2f} ms, boot {md['msBoot']:.2f} ms")
+    mp_.context.close()
+
+    mc, mpg = fresh()
+    mpg.evaluate(f"sessionStorage.removeItem('rw-midnight-boot'); {R}.settings.set('motion', 'full')")
+    mpg.evaluate("document.querySelector('.world-card[data-id=\"midnight\"]').click()")
+    try: wait(mpg, f"{R}.engine.theme.id === 'midnight' && /^psx-/.test({R}.engine.toForm.id) && {R}.backdrop.theme.id === 'midnight' && {R}.backdrop.S && {R}.backdrop.S.boot !== undefined", 15000); ok = True
+    except Exception: ok = False
+    boot0 = mpg.evaluate(f"{R}.backdrop.S && {R}.backdrop.S.boot")
+    check("selecting Midnight Drive loads the pack, shows a psx- form", ok, mpg.evaluate(f"[{R}.engine.theme && {R}.engine.theme.id, {R}.engine.toForm.id]"))
+    time.sleep(2.8)
+    boot1 = mpg.evaluate(f"[{R}.backdrop.S.boot, sessionStorage.getItem('rw-midnight-boot')]")
+    mpg.evaluate(f"{R}.themeManager.apply('aero', 'user')"); time.sleep(0.8)
+    mpg.evaluate(f"{R}.themeManager.apply('midnight', 'user')")
+    wait(mpg, f"{R}.backdrop.theme.id === 'midnight' && {R}.backdrop.S && {R}.backdrop.S.boot !== undefined", 10000); time.sleep(0.3)
+    boot2 = mpg.evaluate(f"{R}.backdrop.S.boot")
+    check("boot intro plays on first entry in full motion, then ends", isinstance(boot0, (int, float)) and 0 <= boot0 < 2.2 and boot1[0] == -1 and boot1[1] == "1", [boot0, boot1])
+    check("boot intro plays once per session", boot2 == -1, boot2)
+    mpg.evaluate(f"sessionStorage.removeItem('rw-midnight-boot'); {R}.settings.set('motion', 'reduced'); {R}.themeManager.apply('aero', 'user')"); time.sleep(0.8)
+    mpg.evaluate(f"{R}.themeManager.apply('midnight', 'user')"); time.sleep(2)
+    red = mpg.evaluate(f"[{R}.backdrop.S && {R}.backdrop.S.boot, sessionStorage.getItem('rw-midnight-boot'), {R}.backdrop.running]")
+    check("reduced motion: no boot intro, still road", red[0] in (None, -1) and red[1] is None and red[2] is False, red)
+    mpg.evaluate(f"{R}.settings.set('motion', 'full')")
+    check("worlds count says 16", "16 worlds" in mpg.inner_text("#worlds-count"), mpg.inner_text("#worlds-count"))
+    mc.close()
+    mc, mpg = fresh(BASE + "#world=midnight&form=psx-taxi")
+    try: wait(mpg, f"{R}.engine.theme.id === 'midnight' && {R}.engine.toForm.id === 'psx-taxi'", 10000); ok = True
+    except Exception: ok = False
+    check("cold start via #world=midnight&form=psx-taxi", ok, mpg.evaluate(f"[{R}.engine.theme && {R}.engine.theme.id, {R}.engine.toForm.id]"))
+    mc.close()
+    mc, mpg = fresh()
+    mpg.evaluate(f"{R}.themeManager.apply('aero', 'user')"); time.sleep(0.5)
+    mpg.route("**/js/worlds/midnight.js", lambda r: r.abort())
+    mpg.evaluate(f"{R}.themeManager.apply('midnight', 'user')"); time.sleep(2)
+    mf = mpg.evaluate(f"[document.documentElement.dataset.theme, {R}.engine.theme.id, document.querySelector('#toast').textContent]")
+    check("midnight pack failure reverts + toast", mf[0] == "aero" and mf[1] == "aero" and "Midnight Drive" in mf[2], mf)
+    mc.close()
 
     # ---- mobile layout still fits
     m = b.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True)

@@ -43,7 +43,7 @@ with sync_playwright() as p:
 
     # --- theme registry & assets
     themes = page.evaluate("Array.from(document.querySelectorAll('.world-card')).map(c => c.dataset.id)")
-    check("15 world cards rendered", len(themes) == 15, themes)
+    check("16 world cards rendered", len(themes) == 16, themes)
     wc_label = page.text_content("#worlds-count")
     check("worlds count label matches the number of worlds", wc_label.strip() == f"{len(themes)} worlds", wc_label)
     pool_sizes = page.evaluate("(async () => { const T = await import('./js/theme-registry.js'), P = await import('./js/world-packs.js'); for (const t of T.THEMES) await P.ensurePack(t); return T.THEMES.map(t => t.hologram.forms.length); })()")

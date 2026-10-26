@@ -14,6 +14,7 @@
     "Archivo": "Archivo:wght@400;600;800",
     "Archivo Black": "Archivo+Black",
     "Audiowide": "Audiowide",
+    "Chakra Petch": "Chakra+Petch:wght@500;700",
     "Cinzel": "Cinzel:wght@500;700",
     "Cormorant Garamond": "Cormorant+Garamond:ital,wght@0,500;0,700;1,500",
     "DM Mono": "DM+Mono:wght@400;500",
@@ -54,7 +55,8 @@
     "tiltshift": ["DM Mono", "DM Sans"],
     "glitch": ["JetBrains Mono", "Major Mono Display", "VT323"],
     "aero": ["DM Mono", "Nunito Sans", "Varela Round"],
-    "deepfield": ["Pixelify Sans", "Silkscreen", "VT323"]
+    "deepfield": ["Pixelify Sans", "Silkscreen", "VT323"],
+    "midnight": ["Chakra Petch", "Rajdhani", "Share Tech Mono"]
   };
   var loaded = {};
   function href(names) {

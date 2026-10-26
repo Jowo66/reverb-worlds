@@ -745,8 +745,7 @@ window.addEventListener('hashchange', () => { if (SHARE_RE.test(location.hash)) 
 
 /* Boot */
 async function boot() {
-  // Complete a Spotify PKCE login if we were redirected back from Spotify.
-  // Only pull in the PKCE helpers when Spotify has actually redirected back here.
+  // Back from a Spotify login: only then load the PKCE helpers and finish it.
   const redirect = /[?&](code|error)=/.test(location.search)
     ? await (await import('./player/spotify-common.js')).handleRedirect(clientId())
     : { handled: false };

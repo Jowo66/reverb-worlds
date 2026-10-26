@@ -1,8 +1,8 @@
 # REVERB // WORLDS
 
-A static, GitHub Pages–ready music player with **15 selectable visual worlds** and a signature **music-reactive hologram**. Every world shares one player and one hologram engine. Each world brings its own art direction, materials, form pool, transition and reactions.
+A static, GitHub Pages–ready music player with **16 selectable visual worlds** and a signature **music-reactive hologram**. Every world shares one player and one hologram engine. Each world brings its own art direction, materials, form pool, transition and reactions.
 
-There are no build step, frameworks, or image or audio assets. Everything is plain HTML/CSS and ES modules, and every visual is drawn in code (Canvas 2D). Hologram forms in Deep Field are traced from 3D models: CC0 ships and robots by Quaternius (quaternius.com) and voxel robots by Max Parata (maxparata.itch.io, CC BY-ND 4.0); its planets port the maths of Deep-Fold's MIT-licensed Pixel Planets shaders.
+There are no build step, frameworks, or image or audio assets. Everything is plain HTML/CSS and ES modules, and every visual is drawn in code (Canvas 2D). Hologram forms in Deep Field are traced from 3D models: CC0 ships and robots by Quaternius (quaternius.com) and voxel robots by Max Parata (maxparata.itch.io, CC BY-ND 4.0); its planets port the maths of Deep-Fold's MIT-licensed Pixel Planets shaders. Midnight Drive's cars and street props are traced from CC0 models by GGBot ("PSX Style Cars", ggbot.itch.io) and Quaternius.
 
 ---
 
@@ -10,13 +10,13 @@ There are no build step, frameworks, or image or audio assets. Everything is pla
 
 | Feature | Status |
 |---|---|
-| 15 worlds (Cyberpunk → Glitch Art, plus Frutiger Aero and Deep Field), data-driven in `js/theme-registry.js` | ✅ |
-| **World packs:** a world can keep its backdrop and forms in `js/worlds/<id>.js`, loaded only when it is first opened (Deep Field does), so new worlds barely touch the startup budget | ✅ |
-| World switching that never interrupts playback, seek position or queue | ✅ (tested on all 15) |
+| 16 worlds (Cyberpunk → Glitch Art, plus Frutiger Aero, Deep Field and Midnight Drive), data-driven in `js/theme-registry.js` | ✅ |
+| **World packs:** a world can keep its backdrop and forms in `js/worlds/<id>.js`, loaded only when it is first opened (Deep Field and Midnight Drive do), together with its hologram settings, so new worlds barely touch the startup budget | ✅ |
+| World switching that never interrupts playback, seek position or queue | ✅ (tested on all 16) |
 | **v1.1:** Continue Last Session (world, shape, view and the REVERB track cued at the same position, with a Resume prompt) · Favourites (☆ on worlds, shapes and REVERB tracks; keys 1–9) · Library › Saved (save named Experiences; 4 built-in presets) · World Info panel (ⓘ or I) · 60-second tour | ✅ |
 | **v1.2:** Share links: Library › Saved › Copy share link (or Link on a saved experience) copies a readable URL with the world, shape, view, settings and REVERB track. Opening one sets everything up and offers Play; it never autoplays and can only lower motion. Developer Overlay (D or `?debug`): frame rate, backdrop cost vs the 3 ms budget, audio meters, onset ticks (labelled with their source), particles, quality, blur, worker and caches | ✅ |
 | **Grab & rotate** the hologram: drag with mouse or touch (with momentum), arrow keys when focused, double-click or Home to reset | ✅ |
-| Hologram engine: 146 forms, 8 per world (9 for Japanese Scroll, 33 for Deep Field: 29 ships and robots traced from 3D models plus 4 procedural); random selection without immediate repeats; manual **Morph**; **Auto-morph** (timer, or every 16 detected onsets); **Auto-world** | ✅ |
+| Hologram engine: 169 forms, 8 per world (9 for Japanese Scroll; 33 for Deep Field: 29 ships and robots traced from 3D models plus 4 procedural; 23 for Midnight Drive: 20 cars and street props traced from 3D models plus 3 procedural); random selection without immediate repeats; manual **Morph**; **Auto-morph** (timer, or every 16 detected onsets); **Auto-world** | ✅ |
 | 15 transition styles (scan-wipe, iris, stroke-redraw, tile-reassemble, brush-reveal, emerge, spray, low-poly scan, slab, lead-assemble, crossfade, focus-pull, pixel-sort, bubble-float, pixel-dissolve) | ✅ |
 | Per-world kick / snare / high-frequency reactions and ambient particles | ✅ |
 | Animated procedural backdrop per world, plus procedural world-card thumbnails | ✅ |
@@ -127,12 +127,12 @@ Spotify integrations against **mocked** Spotify endpoints (38 checks: catalogue 
 python3 reverb-worlds/tests/spotify_mock_test.py http://127.0.0.1:8765/reverb-worlds/
 ```
 
-`tests/features_test.py` (68 checks) covers the v1.1 features, v1.2 share links and developer overlay, the startup budget, and Deep Field (pack loading, failure fallback, cold-start links, pixel look, reduced motion, model credits).
+`tests/features_test.py` (87 checks) covers the v1.1 features, v1.2 share links and developer overlay, the startup budget, and Deep Field (pack loading, failure fallback, cold-start links, pixel look, reduced motion, model credits) and Midnight Drive (pack, forms, backdrop cost, boot intro once per session and never in reduced motion, cold-start links, failure fallback).
 
 `tests/test_bake_forms.py` (12 checks, `python -m unittest tests/test_bake_forms.py`) covers the model baking tool.
 
-The smoke test covers 105 checks:
-- All 15 worlds apply, with playback continuing across every switch, and each has 8+ holograms.
+The smoke test covers 108 checks:
+- All 16 worlds apply, with playback continuing across every switch, and each has 8+ holograms.
 - Drag, arrow-key and double-click hologram rotation.
 - Each world's form comes from its own pool.
 - Morphs never repeat back-to-back.
@@ -143,7 +143,7 @@ The smoke test covers 105 checks:
 - Local audio files (generated WAV upload) driving audio-reactive mode.
 - The Spotify embed fails gracefully with no fake controls.
 - No secrets ship, no local assets are missing, and there are no JS errors.
-- Palette contrast for all 15 worlds.
+- Palette contrast for all 16 worlds.
 - Mobile and tablet layouts have no horizontal scroll.
 
 ## Baking hologram forms from 3D models
@@ -163,11 +163,13 @@ css/  reset · tokens · layout · components · themes (per-world ornament)
 js/
   app.js                    wiring: settings ↔ worlds ↔ hologram ↔ player
   settings.js               harmless prefs in localStorage (fails gracefully)
-  theme-registry.js         the 15 worlds as data
+  theme-registry.js         the 16 worlds as data
   world-packs.js            lazy loader for pack worlds (js/worlds/<id>.js)
   worlds/
     deepfield.js            Deep Field pack: pixel-planet backdrop + forms
     deepfield-baked.js      generated by tools/bake_forms.py (do not edit)
+    midnight.js             Midnight Drive pack: PS1 night-road backdrop, boot intro, forms
+    midnight-baked.js       generated by tools/bake_forms.py (do not edit)
   theme-manager.js          applies CSS tokens + data-theme (presentation only)
   audio-analyser.js         Web Audio analysis + honest ambient source
   config.js                 optional public Spotify Client ID
@@ -221,4 +223,4 @@ How each works:
 - Demo tracks render offline in roughly 1–3 s on a typical laptop (slower on low-end devices). The first one pre-renders in the background on load.
 
 ## Credits & originality
-All visuals, silhouettes, patterns and music are generated by code in this repository. None of it is copied from existing artworks or tracks. Exceptions: Deep Field's hologram forms are outlines traced from 3D models by Quaternius (CC0, quaternius.com) and Max Parata ("Voxel Mechas & Robots", CC BY-ND 4.0, maxparata.itch.io/voxel-mechas); its planets port the maths of Deep-Fold's MIT-licensed Pixel Planets and Space Background shaders. The cave pictograms are an artistic interpretation, not authentic historical writing. This project is not affiliated with or endorsed by Spotify. Spotify playback uses only Spotify's official embed and SDK, under Spotify's developer terms.
+All visuals, silhouettes, patterns and music are generated by code in this repository. None of it is copied from existing artworks or tracks. Exceptions: Deep Field's hologram forms are outlines traced from 3D models by Quaternius (CC0, quaternius.com) and Max Parata ("Voxel Mechas & Robots", CC BY-ND 4.0, maxparata.itch.io/voxel-mechas); its planets port the maths of Deep-Fold's MIT-licensed Pixel Planets and Space Background shaders. Midnight Drive's forms are traced from CC0 models by GGBot ("PSX Style Cars", ggbot.itch.io/psx-style-cars) and Quaternius; its boot intro is an original homage and uses no console maker's logos or marks. The cave pictograms are an artistic interpretation, not authentic historical writing. This project is not affiliated with or endorsed by Spotify. Spotify playback uses only Spotify's official embed and SDK, under Spotify's developer terms.

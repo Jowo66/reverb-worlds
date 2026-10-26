@@ -2,8 +2,7 @@
  * world-packs.js: worlds with `pack: '<id>'` keep their backdrop and forms in
  * js/worlds/<id>.js, loaded on first use (window and backdrop worker alike) and
  * registered into BACKDROPS / FORMS so existing synchronous lookups just work.
- * A pack also brings its world's hologram settings; until then the registry
- * entry only has `formIds`, so links and favourites can name its forms.
+ * It also brings the world's hologram settings (until then: only `formIds`).
  */
 import { BACKDROPS } from './hologram/backdrops.js';
 import { FORMS } from './hologram/forms.js';

@@ -1,5 +1,5 @@
 /**
- * theme-registry.js — the 15 worlds, defined as data.
+ * theme-registry.js — the 16 worlds, defined as data.
  *
  * Every world shares one player and one hologram engine. A world only
  * describes presentation:
@@ -254,6 +254,16 @@ export const THEMES = [
     panel: { radius: '0px', borderWidth: '2px', shadow: '4px 4px 0 #000', alpha: 0.9 },
     background: { renderer: 'deepfield', fps: 24 },
     formIds: /^(ship|robot|df)-/,
+    a11y: {},
+  },
+  {
+    id: 'midnight', num: '16', name: 'Midnight Drive', tagline: 'PSX Lo-Fi', pack: 'midnight',
+    mood: 'Sodium lamps, fog, and a long road home.',
+    palette: { bg: '#07080f', surface: '#141a2b', primary: '#ff9a3c', primaryInk: '#ffb36b', onPrimary: '#1a0c00', secondary: '#6fc7c9', accent: '#ff3b4f', text: '#e8ecf5', muted: '#9aa3bd', border: '#6fc7c973' },
+    fonts: { display: "'Chakra Petch', sans-serif", body: "'Rajdhani', system-ui, sans-serif", mono: "'Share Tech Mono', ui-monospace, monospace" },
+    panel: { radius: '2px', borderWidth: '1px', shadow: 'inset 1px 1px #fff3, inset -1px -1px #000b, 0 8px 24px #0008', alpha: 0.92 },
+    background: { renderer: 'midnight', fps: 30 },
+    formIds: /^psx-/,
     a11y: {},
   },
 ];

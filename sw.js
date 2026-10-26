@@ -49,6 +49,8 @@ const SHELL = [
     'js/world-packs.js',
     'js/worlds/deepfield-baked.js',
     'js/worlds/deepfield.js',
+    'js/worlds/midnight-baked.js',
+    'js/worlds/midnight.js',
 ];
 
 self.addEventListener('install', e => {

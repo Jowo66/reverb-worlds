@@ -36,12 +36,12 @@ function caption(text, step, total) {
 function script() {
   const reduced = A.settings.get('motion') !== 'full';
   return [
-    [0, 'REVERB // WORLDS: one music engine, 15 visual worlds. Starting a track made entirely in your browser…', async () => {
+    [0, 'REVERB // WORLDS: one music engine, 16 visual worlds. Starting a track made entirely in your browser…', async () => {
       await A.useMedia(); A.analyser.ensureContext();
       const st = A.player.state;
       if (!st.playing) A.player.playIndex(Math.max(0, st.index));
     }],
-    [7, 'The hologram has 146 forms. Each morphs into the next point-for-point.', () => A.engine.morph()],
+    [7, 'The hologram has 169 forms. Each morphs into the next point-for-point.', () => A.engine.morph()],
     [12, 'Each world has its own morph style, reactions and particles.', () => A.engine.morph()],
     [17, 'Switching worlds never interrupts the music: Cyberpunk…', () => A.themeManager.apply('cyberpunk', 'tour')],
     [23, '…Japanese Scroll: flat woodblock-print shapes and ink…', () => A.themeManager.apply('ukiyo', 'tour')],
